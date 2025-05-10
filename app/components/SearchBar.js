@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaSearch, FaTimes } from "react-icons/fa";
 import "../styles/search-bar.css";
 
-export default function SearchBar({ onSearch }) {
+export default function SearchBar({ onSearch, searchBarRef }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(
@@ -85,6 +85,15 @@ export default function SearchBar({ onSearch }) {
       router.push(`/job-cards?${params.toString()}`);
     }
   };
+
+  // Expose the clearSearch method via ref
+  React.useImperativeHandle(
+    searchBarRef,
+    () => ({
+      clearSearch,
+    }),
+    []
+  );
 
   // Focus the input when the component mounts
   useEffect(() => {

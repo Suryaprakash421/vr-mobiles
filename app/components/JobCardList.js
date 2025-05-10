@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SearchBar from "./SearchBar";
 import Pagination from "./Pagination";
 import LoadingOverlay from "./LoadingOverlay";
@@ -17,8 +17,10 @@ export default function JobCardList({
   showSearch = true,
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const searchBarRef = useRef();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -69,8 +71,36 @@ export default function JobCardList({
 
   if (!jobCards || jobCards.length === 0) {
     return (
-      <div className="text-center py-10">
-        <p className="text-gray-500">No job cards found.</p>
+      <div>
+        {showSearch && (
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl shadow-sm">
+            <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+              Find Job Cards
+            </h2>
+            <SearchBar searchBarRef={searchBarRef} />
+          </div>
+        )}
+        <div className="text-center py-10 bg-white rounded-lg shadow">
+          <p className="text-gray-500">No job cards found.</p>
+          {searchParams?.get("search") && (
+            <button
+              onClick={() => {
+                // Clear the search input field
+                if (searchBarRef.current) {
+                  searchBarRef.current.clearSearch();
+                } else {
+                  // Fallback if ref is not available
+                  const params = new URLSearchParams();
+                  params.set("page", "1");
+                  router.push(`/job-cards?${params.toString()}`);
+                }
+              }}
+              className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
+            >
+              Clear Search
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -82,7 +112,7 @@ export default function JobCardList({
           <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
             Find Job Cards
           </h2>
-          <SearchBar />
+          <SearchBar searchBarRef={searchBarRef} />
         </div>
       )}
 
