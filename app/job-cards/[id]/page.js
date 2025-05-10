@@ -5,6 +5,33 @@ import { prisma } from "@/lib/prisma";
 import Layout from "../../components/Layout";
 import Link from "next/link";
 
+export async function generateMetadata({ params }) {
+  // Safely access params
+  const { id: idParam } = params;
+  const id = parseInt(idParam);
+
+  if (isNaN(id)) {
+    return {
+      title: "Job Card Not Found",
+    };
+  }
+
+  const jobCard = await prisma.jobCard.findUnique({
+    where: { id },
+    select: { customerName: true, billNo: true },
+  });
+
+  if (!jobCard) {
+    return {
+      title: "Job Card Not Found",
+    };
+  }
+
+  return {
+    title: `${jobCard.customerName} - #${jobCard.billNo} | VR Mobiles`,
+  };
+}
+
 export default async function JobCardDetailPage({ params }) {
   const session = await getServerSession(authOptions);
 
@@ -12,7 +39,9 @@ export default async function JobCardDetailPage({ params }) {
     redirect("/login");
   }
 
-  const id = parseInt(params.id);
+  // Safely access params
+  const { id: idParam } = params;
+  const id = parseInt(idParam);
 
   if (isNaN(id)) {
     redirect("/job-cards");
@@ -45,7 +74,7 @@ export default async function JobCardDetailPage({ params }) {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-extrabold text-gray-900">
-            Job Card #{jobCard.billNo}
+            {jobCard.customerName} - #{jobCard.billNo}
           </h1>
           <div className="flex space-x-2">
             <Link
@@ -228,6 +257,18 @@ export default async function JobCardDetailPage({ params }) {
                 <p className="font-medium text-gray-900">
                   {jobCard.finalAmount
                     ? `₹${jobCard.finalAmount.toFixed(2)}`
+                    : "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-700 text-sm font-medium">
+                  Remaining Payment
+                </p>
+                <p className="font-medium text-gray-900">
+                  {jobCard.finalAmount
+                    ? `₹${(
+                        jobCard.finalAmount - (jobCard.advance || 0)
+                      ).toFixed(2)}`
                     : "N/A"}
                 </p>
               </div>

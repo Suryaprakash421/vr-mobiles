@@ -1,0 +1,65 @@
+/* Button loading animation */
+.loading-btn {
+  position: relative;
+  overflow: hidden;
+  pointer-events: none; /* Prevent additional clicks while loading */
+}
+
+/* Pulsing background effect */
+.loading-btn {
+  animation: button-pulse 2s infinite;
+}
+
+/* Bottom loading bar */
+.loading-btn::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  animation: button-loading 1.5s infinite;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+
+/* Top loading bar for more visibility */
+.loading-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(to left, #3b82f6, #8b5cf6);
+  animation: button-loading-reverse 1.5s infinite;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+}
+
+@keyframes button-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes button-loading-reverse {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes button-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import DebugInfo from "../components/DebugInfo";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +18,15 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    // Show loading overlay
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("show-loading-overlay", {
+          detail: { message: "Signing in..." },
+        })
+      );
+    }
 
     try {
       console.log("Attempting login with:", { username });
@@ -33,6 +43,11 @@ export default function LoginPage() {
         console.error("Login error:", result.error);
         setError("Invalid username or password. Please try admin/admin123");
         setIsLoading(false);
+
+        // Hide loading overlay
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
+        }
         return;
       }
 
@@ -44,6 +59,11 @@ export default function LoginPage() {
         "An error occurred during login: " + (error.message || "Unknown error")
       );
       setIsLoading(false);
+
+      // Hide loading overlay
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
+      }
     }
   };
 

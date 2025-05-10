@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import LoadingOverlay from "./LoadingOverlay";
 
 export default function JobCardForm({ jobCard, isEditing = false }) {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm({
     defaultValues: jobCard || {
       isOn: false,
@@ -37,6 +39,18 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     setError("");
+
+    // Show loading overlay
+    if (typeof window !== "undefined") {
+      const message = isEditing
+        ? "Updating job card..."
+        : "Creating job card...";
+      window.dispatchEvent(
+        new CustomEvent("show-loading-overlay", {
+          detail: { message },
+        })
+      );
+    }
 
     try {
       console.log("Form data submitted:", data);
@@ -94,6 +108,11 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
       setError(error.message || "Failed to save job card");
     } finally {
       setIsSubmitting(false);
+
+      // Hide loading overlay
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
+      }
     }
   };
 
@@ -105,35 +124,11 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
         </div>
       )}
 
-      {isSubmitting && (
-        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
-            <svg
-              className="animate-spin h-10 w-10 text-blue-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            <p className="mt-3 text-gray-900 font-medium">
-              {isEditing ? "Updating" : "Saving"} job card...
-            </p>
-          </div>
-        </div>
-      )}
+      <LoadingOverlay
+        isVisible={isSubmitting}
+        message={`${isEditing ? "Updating" : "Saving"} job card...`}
+        fullScreen={true}
+      />
 
       <div className="bg-white shadow-md rounded-lg p-6 border-l-4 border-blue-500">
         <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-blue-200 pb-2">
@@ -245,7 +240,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               {...register("customerName", {
                 required: "Customer name is required",
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
             {errors.customerName && (
               <p className="mt-1 text-sm text-red-600">
@@ -267,7 +262,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               {...register("mobileNumber", {
                 required: "Mobile number is required",
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
             {errors.mobileNumber && (
               <p className="mt-1 text-sm text-red-600">
@@ -287,7 +282,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="address"
               {...register("address")}
               rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
           </div>
 
@@ -302,7 +297,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               type="text"
               id="aadhaarNumber"
               {...register("aadhaarNumber")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
           </div>
         </div>
@@ -316,7 +311,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
           <div>
             <label
               htmlFor="model"
-              className="block text-sm font-semibold text-gray-800"
+              className="block text-sm font-semibold text-gray-900"
             >
               Model *
             </label>
@@ -324,7 +319,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               type="text"
               id="model"
               {...register("model", { required: "Model is required" })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
             {errors.model && (
               <p className="mt-1 text-sm text-red-600">
@@ -336,7 +331,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
           <div>
             <label
               htmlFor="complaint"
-              className="block text-sm font-semibold text-gray-800"
+              className="block text-sm font-semibold text-gray-900"
             >
               Complaint *
             </label>
@@ -344,7 +339,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="complaint"
               {...register("complaint", { required: "Complaint is required" })}
               rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
             {errors.complaint && (
               <p className="mt-1 text-sm text-red-600">
@@ -363,7 +358,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
           <div>
             <label
               htmlFor="admissionFees"
-              className="block text-sm font-semibold text-gray-800"
+              className="block text-sm font-semibold text-gray-900"
             >
               Admission Fees
             </label>
@@ -372,14 +367,14 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="admissionFees"
               step="0.01"
               {...register("admissionFees")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
           </div>
 
           <div>
             <label
               htmlFor="estimate"
-              className="block text-sm font-semibold text-gray-800"
+              className="block text-sm font-semibold text-gray-900"
             >
               Estimate
             </label>
@@ -388,14 +383,14 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="estimate"
               step="0.01"
               {...register("estimate")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
           </div>
 
           <div>
             <label
               htmlFor="advance"
-              className="block text-sm font-semibold text-gray-800"
+              className="block text-sm font-semibold text-gray-900"
             >
               Advance
             </label>
@@ -404,14 +399,14 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="advance"
               step="0.01"
               {...register("advance")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
             />
           </div>
 
           <div>
             <label
               htmlFor="finalAmount"
-              className="block text-sm font-semibold text-gray-800"
+              className="block text-sm font-semibold text-gray-900"
             >
               Final Amount
             </label>
@@ -420,7 +415,32 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="finalAmount"
               step="0.01"
               {...register("finalAmount")}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="remainingPayment"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Remaining Payment
+            </label>
+            <input
+              type="text"
+              id="remainingPayment"
+              readOnly
+              value={
+                watch("finalAmount") && watch("advance")
+                  ? `₹${(
+                      parseFloat(watch("finalAmount")) -
+                      parseFloat(watch("advance") || 0)
+                    ).toFixed(2)}`
+                  : watch("finalAmount") && !watch("advance")
+                  ? `₹${parseFloat(watch("finalAmount")).toFixed(2)}`
+                  : ""
+              }
+              className="mt-1 block w-full rounded-md bg-gray-50 border-gray-300 shadow-sm font-medium text-gray-900 px-3 py-2 cursor-not-allowed"
             />
           </div>
         </div>

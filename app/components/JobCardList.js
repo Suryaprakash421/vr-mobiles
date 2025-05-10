@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import SearchBar from "./SearchBar";
 import Pagination from "./Pagination";
+import LoadingOverlay from "./LoadingOverlay";
 
 export default function JobCardList({ jobCards, showSearch = true }) {
   const router = useRouter();
@@ -32,6 +33,15 @@ export default function JobCardList({ jobCards, showSearch = true }) {
       setIsDeleting(true);
       setDeleteId(id);
 
+      // Show loading overlay
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("show-loading-overlay", {
+            detail: { message: "Deleting job card..." },
+          })
+        );
+      }
+
       try {
         const response = await fetch(`/api/job-cards/${id}`, {
           method: "DELETE",
@@ -48,6 +58,11 @@ export default function JobCardList({ jobCards, showSearch = true }) {
       } finally {
         setIsDeleting(false);
         setDeleteId(null);
+
+        // Hide loading overlay
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
+        }
       }
     }
   };
@@ -102,7 +117,12 @@ export default function JobCardList({ jobCards, showSearch = true }) {
         </div>
       )}
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
+      <div className="overflow-x-auto bg-white rounded-lg shadow relative">
+        <LoadingOverlay
+          isVisible={isDeleting}
+          message="Deleting job card..."
+          fullScreen={false}
+        />
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-blue-700 to-violet-600">
             <tr>
