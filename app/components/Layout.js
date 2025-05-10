@@ -2,10 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import SideNav from "./SideNav";
-import LoadingBar from "./LoadingBar";
-import GlobalLoadingOverlay from "./GlobalLoadingOverlay";
+import GlobalLoadingIndicator from "./GlobalLoadingIndicator";
 import { useEffect } from "react";
-import "../styles/button-loading.css";
+import "../styles/loading-animations.css";
 
 export default function Layout({ children }) {
   const pathname = usePathname();
@@ -34,8 +33,7 @@ export default function Layout({ children }) {
   if (pathname === "/login" || pathname === "/register") {
     return (
       <div className="min-h-screen bg-gray-50">
-        <LoadingBar />
-        <GlobalLoadingOverlay />
+        <GlobalLoadingIndicator />
         {children}
       </div>
     );
@@ -43,8 +41,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="h-screen overflow-hidden bg-gray-50 flex">
-      <LoadingBar />
-      <GlobalLoadingOverlay />
+      <GlobalLoadingIndicator />
       <SideNav />
       <div className="flex-1 overflow-auto">
         <main className="py-8 px-4 sm:px-6 lg:px-8 md:px-10">{children}</main>

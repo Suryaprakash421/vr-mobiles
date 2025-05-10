@@ -1,41 +1,32 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
-// User model for authentication
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
   password  String
   name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   jobCards  JobCard[]
 }
 
-// JobCard model for mobile service records
 model JobCard {
   id            Int      @id @default(autoincrement())
-  billNo        Int?     @unique // Will be set to id value in the application logic
+  billNo        Int?     @unique
   date          DateTime @default(now())
-
-  // Condition checkboxes
   isOn          Boolean  @default(false)
   isOff         Boolean  @default(false)
   hasBattery    Boolean  @default(false)
   hasDoor       Boolean  @default(false)
   hasSim        Boolean  @default(false)
   hasSlot       Boolean  @default(false)
-
-  // Customer information
   customerName  String
   address       String?
   mobileNumber  String
@@ -43,15 +34,12 @@ model JobCard {
   model         String
   admissionFees Float?
   aadhaarNumber String?
-
-  // Financial information
   estimate      Float?
   advance       Float?
   finalAmount   Float?
-
-  // Metadata
+  status        String   @default("pending")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  createdBy     User     @relation(fields: [userId], references: [id])
   userId        Int
+  createdBy     User     @relation(fields: [userId], references: [id])
 }

@@ -4,6 +4,8 @@ import { authOptions } from "../../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import Layout from "../../components/Layout";
 import Link from "next/link";
+import BackButton from "../../components/BackButton";
+import SimpleStatusDropdown from "../../components/SimpleStatusDropdown";
 
 export async function generateMetadata({ params }) {
   // Safely access params
@@ -73,9 +75,12 @@ export default async function JobCardDetailPage({ params }) {
     <Layout>
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-extrabold text-gray-900">
-            {jobCard.customerName} - #{jobCard.billNo}
-          </h1>
+          <div className="flex items-center">
+            <BackButton href="/job-cards" label="Back to job cards" />
+            <h1 className="text-2xl font-extrabold text-gray-900">
+              {jobCard.customerName} - #{jobCard.billNo}
+            </h1>
+          </div>
           <div className="flex space-x-2">
             <Link
               href={`/job-cards/${jobCard.id}/edit`}
@@ -116,13 +121,12 @@ export default async function JobCardDetailPage({ params }) {
               </div>
               <div>
                 <p className="text-gray-700 text-sm font-medium">Status</p>
-                <p
-                  className={`font-medium ${
-                    jobCard.finalAmount ? "text-green-700" : "text-yellow-700"
-                  }`}
-                >
-                  {jobCard.finalAmount ? "Completed" : "In Progress"}
-                </p>
+                <div className="mt-1">
+                  <SimpleStatusDropdown
+                    jobId={jobCard.id}
+                    currentStatus={jobCard.status}
+                  />
+                </div>
               </div>
             </div>
           </div>

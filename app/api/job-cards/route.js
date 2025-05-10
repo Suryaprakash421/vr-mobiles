@@ -69,6 +69,10 @@ export async function POST(request) {
 
     const data = await request.json();
     console.log("Received data:", data);
+    console.log("Data type:", typeof data);
+    console.log("Data keys:", Object.keys(data));
+    console.log("Status value:", data.status);
+    console.log("Status type:", typeof data.status);
 
     // Get the user ID from the session
     const userId = parseInt(session.user.id);
@@ -96,6 +100,7 @@ export async function POST(request) {
       estimate: data.estimate || null,
       advance: data.advance || null,
       finalAmount: data.finalAmount || null,
+      status: data.status || "pending", // Add the status field with a default value
       userId: userId,
     };
 
@@ -119,10 +124,16 @@ export async function POST(request) {
     return NextResponse.json(updatedJobCard, { status: 201 });
   } catch (error) {
     console.error("Error creating job card:", error);
+    console.error("Error stack:", error.stack);
+
+    // Provide more detailed error information
     return NextResponse.json(
       {
         error: "Failed to create job card",
         details: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code,
       },
       { status: 500 }
     );

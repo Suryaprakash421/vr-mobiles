@@ -55,15 +55,6 @@ export default async function JobCardsPage({ searchParams }) {
           </h1>
         </div>
 
-        {search && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-            <p className="text-blue-800">
-              Search results for: <strong>{search}</strong> ({jobCards.length}{" "}
-              results)
-            </p>
-          </div>
-        )}
-
         <JobCardList jobCards={jobCards} />
       </div>
     </Layout>

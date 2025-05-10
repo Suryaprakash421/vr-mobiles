@@ -1,0 +1,70 @@
+/* Search bar animations and styles */
+.search-input-focus {
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  transform: translateY(-1px);
+}
+
+.search-input-container:hover .search-icon {
+  transform: scale(1.1);
+}
+
+.search-input-container:focus-within .search-icon {
+  transform: scale(1.1);
+  color: #8b5cf6; /* Purple-500 */
+}
+
+/* Pulsing animation for the search button */
+@keyframes search-button-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(79, 70, 229, 0);
+  }
+}
+
+.search-button-pulse {
+  animation: search-button-pulse 2s infinite;
+}
+
+/* Typing animation for placeholder */
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+.search-input-typing::placeholder {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typing 3s steps(40, end) infinite alternate;
+}
+
+/* Shimmer effect for the search bar */
+.search-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.search-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

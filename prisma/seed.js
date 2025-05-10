@@ -44,6 +44,7 @@ async function main() {
         admissionFees: 100,
         estimate: 1500,
         advance: 500,
+        status: "in-progress",
         userId: admin.id,
       },
     });

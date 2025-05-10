@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import SearchBar from "./SearchBar";
 import Pagination from "./Pagination";
 import LoadingOverlay from "./LoadingOverlay";
+import SimpleStatusDropdown from "./SimpleStatusDropdown";
 
 export default function JobCardList({ jobCards, showSearch = true }) {
   const router = useRouter();
@@ -112,8 +113,19 @@ export default function JobCardList({ jobCards, showSearch = true }) {
   return (
     <div>
       {showSearch && (
-        <div className="mb-6">
+        <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl shadow-sm">
+          <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+            Find Job Cards
+          </h2>
           <SearchBar onSearch={setSearchQuery} />
+          {searchQuery && (
+            <p className="mt-3 text-sm text-gray-600">
+              Showing {filteredJobCards.length} results for:{" "}
+              <span className="font-semibold text-purple-700">
+                {searchQuery}
+              </span>
+            </p>
+          )}
         </div>
       )}
 
@@ -123,7 +135,10 @@ export default function JobCardList({ jobCards, showSearch = true }) {
           message="Deleting job card..."
           fullScreen={false}
         />
-        <table className="min-w-full divide-y divide-gray-200">
+        <table
+          className="min-w-full divide-y divide-gray-200"
+          style={{ position: "relative", zIndex: 0 }}
+        >
           <thead className="bg-gradient-to-r from-blue-700 to-violet-600">
             <tr>
               <th
@@ -164,7 +179,7 @@ export default function JobCardList({ jobCards, showSearch = true }) {
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider min-w-[120px]"
               >
                 Status
               </th>
@@ -201,16 +216,11 @@ export default function JobCardList({ jobCards, showSearch = true }) {
                   <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
                     {jobCard.complaint}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        jobCard.finalAmount
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {jobCard.finalAmount ? "Completed" : "In Progress"}
-                    </span>
+                  <td className="px-6 py-4 whitespace-nowrap min-w-[120px]">
+                    <SimpleStatusDropdown
+                      jobId={jobCard.id}
+                      currentStatus={jobCard.status}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Link

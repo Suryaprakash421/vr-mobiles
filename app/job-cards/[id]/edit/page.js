@@ -4,6 +4,8 @@ import { authOptions } from "../../../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import Layout from "../../../components/Layout";
 import JobCardForm from "../../../components/JobCardForm";
+import Link from "next/link";
+import BackButton from "../../../components/BackButton";
 
 export async function generateMetadata({ params }) {
   // Safely access params
@@ -58,9 +60,15 @@ export default async function EditJobCardPage({ params }) {
   return (
     <Layout>
       <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-extrabold mb-6 text-gray-900">
-          Edit: {jobCard.customerName} - #{jobCard.billNo}
-        </h1>
+        <div className="flex items-center mb-6">
+          <BackButton
+            href={`/job-cards/${jobCard.id}`}
+            label="Back to job card details"
+          />
+          <h1 className="text-2xl font-extrabold text-gray-900">
+            Edit: {jobCard.customerName} - #{jobCard.billNo}
+          </h1>
+        </div>
         <JobCardForm jobCard={jobCard} isEditing={true} />
       </div>
     </Layout>

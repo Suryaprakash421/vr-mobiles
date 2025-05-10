@@ -33,6 +33,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
       estimate: "",
       advance: "",
       finalAmount: "",
+      status: "pending", // Add default status
     },
   });
 
@@ -40,20 +41,15 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
     setIsSubmitting(true);
     setError("");
 
-    // Show loading overlay
-    if (typeof window !== "undefined") {
-      const message = isEditing
-        ? "Updating job card..."
-        : "Creating job card...";
-      window.dispatchEvent(
-        new CustomEvent("show-loading-overlay", {
-          detail: { message },
-        })
-      );
-    }
+    // We don't need to manually show loading as the GlobalLoadingIndicator
+    // will automatically detect form submissions and API calls
 
     try {
       console.log("Form data submitted:", data);
+      console.log("Form data type:", typeof data);
+      console.log("Form data keys:", Object.keys(data));
+      console.log("Status value:", data.status);
+      console.log("Status type:", typeof data.status);
 
       // Convert string values to numbers where needed
       const formattedData = {
@@ -97,7 +93,12 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
       console.log("Response:", response.status, responseData);
 
       if (!response.ok) {
-        throw new Error(responseData.error || "Failed to save job card");
+        console.error("API Error Response:", responseData);
+        throw new Error(
+          responseData.details ||
+            responseData.error ||
+            "Failed to save job card"
+        );
       }
 
       // Redirect to job cards list
@@ -108,11 +109,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
       setError(error.message || "Failed to save job card");
     } finally {
       setIsSubmitting(false);
-
-      // Hide loading overlay
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
-      }
+      // GlobalLoadingIndicator will automatically detect when the API call completes
     }
   };
 
@@ -442,6 +439,24 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               }
               className="mt-1 block w-full rounded-md bg-gray-50 border-gray-300 shadow-sm font-medium text-gray-900 px-3 py-2 cursor-not-allowed"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="status"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              Status
+            </label>
+            <select
+              id="status"
+              {...register("status")}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-medium text-gray-900 px-3 py-2"
+            >
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
           </div>
         </div>
       </div>
