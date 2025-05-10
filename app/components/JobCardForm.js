@@ -15,6 +15,7 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm({
     defaultValues: jobCard || {
       isOn: false,
@@ -36,6 +37,10 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
       status: "pending", // Add default status
     },
   });
+
+  // Watch the power state checkboxes
+  const isOnValue = watch("isOn");
+  const isOffValue = watch("isOff");
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
@@ -127,8 +132,22 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
         fullScreen={true}
       />
 
-      <div className="bg-white shadow-md rounded-lg p-6 border-l-4 border-blue-500">
-        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-blue-200 pb-2">
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-gray-200 pb-2 flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-2 text-purple-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+          </svg>
           Device Condition
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -138,6 +157,12 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="isOn"
               {...register("isOn")}
               className="h-5 w-5 text-blue-600 rounded cursor-pointer"
+              onChange={(e) => {
+                // If turning on, make sure isOff is turned off
+                if (e.target.checked) {
+                  setValue("isOff", false);
+                }
+              }}
             />
             <label
               htmlFor="isOn"
@@ -152,6 +177,12 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
               id="isOff"
               {...register("isOff")}
               className="h-5 w-5 text-blue-600 rounded cursor-pointer"
+              onChange={(e) => {
+                // If turning off, make sure isOn is turned off
+                if (e.target.checked) {
+                  setValue("isOn", false);
+                }
+              }}
             />
             <label
               htmlFor="isOff"
@@ -219,8 +250,22 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
         </div>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg p-6 border-l-4 border-green-500">
-        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-green-200 pb-2">
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-gray-200 pb-2 flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-2 text-green-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
           Customer Information
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -300,8 +345,22 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
         </div>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg p-6 border-l-4 border-purple-500">
-        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-purple-200 pb-2">
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-gray-200 pb-2 flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-2 text-red-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+          </svg>
           Device Information
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -347,8 +406,22 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
         </div>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg p-6 border-l-4 border-amber-500">
-        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-amber-200 pb-2">
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <h2 className="text-xl font-extrabold mb-4 text-gray-900 border-b border-gray-200 pb-2 flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-2 text-green-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
           Financial Information
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -461,20 +534,76 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
         </div>
       </div>
 
-      <div className="flex justify-end space-x-3">
+      <div className="flex justify-end space-x-3 mt-6">
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-5 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+          className="px-5 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 flex items-center"
         >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 mr-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-5 py-3 border border-transparent rounded-md shadow-md text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all duration-200 transform hover:scale-105"
+          className="px-5 py-3 border border-transparent rounded-md shadow-md text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all duration-200 transform hover:scale-105 flex items-center"
         >
-          {isSubmitting ? "Saving..." : isEditing ? "Update" : "Save"}
+          {isSubmitting ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Saving...
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              {isEditing ? "Update" : "Save"}
+            </>
+          )}
         </button>
       </div>
     </form>

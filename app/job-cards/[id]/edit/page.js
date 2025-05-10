@@ -59,17 +59,26 @@ export default async function EditJobCardPage({ params }) {
 
   return (
     <Layout>
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center mb-6">
-          <BackButton
-            href={`/job-cards/${jobCard.id}`}
-            label="Back to job card details"
-          />
-          <h1 className="text-2xl font-extrabold text-gray-900">
-            Edit: {jobCard.customerName} - #{jobCard.billNo}
-          </h1>
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <BackButton
+                href={`/job-cards/${jobCard.id}`}
+                label="Back to job card details"
+                className="text-white hover:text-blue-100"
+              />
+              <h1 className="text-2xl font-extrabold">
+                Edit: {jobCard.customerName} - #{jobCard.billNo}
+              </h1>
+            </div>
+          </div>
         </div>
-        <JobCardForm jobCard={jobCard} isEditing={true} />
+
+        <div className="p-6">
+          <JobCardForm jobCard={jobCard} isEditing={true} />
+        </div>
       </div>
     </Layout>
   );
