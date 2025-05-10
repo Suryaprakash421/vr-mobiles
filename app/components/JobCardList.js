@@ -7,21 +7,18 @@ import SearchBar from "./SearchBar";
 import Pagination from "./Pagination";
 import LoadingOverlay from "./LoadingOverlay";
 import SimpleStatusDropdown from "./SimpleStatusDropdown";
+import PageSizeSelector from "./PageSizeSelector";
 
-export default function JobCardList({ jobCards, showSearch = true }) {
+export default function JobCardList({
+  jobCards,
+  totalCount,
+  currentPage = 1,
+  pageSize = 10,
+  showSearch = true,
+}) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Reset to first page when search query changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -68,39 +65,7 @@ export default function JobCardList({ jobCards, showSearch = true }) {
     }
   };
 
-  // Filter job cards based on search query
-  const filteredJobCards = useMemo(() => {
-    if (!searchQuery.trim()) return jobCards || [];
-
-    const query = searchQuery.toLowerCase().trim();
-    return (jobCards || []).filter(
-      (card) =>
-        // Search by bill number
-        (card.billNo && card.billNo.toString().includes(query)) ||
-        // Search by customer name
-        (card.customerName &&
-          card.customerName.toLowerCase().includes(query)) ||
-        // Search by mobile number
-        (card.mobileNumber && card.mobileNumber.toLowerCase().includes(query))
-    );
-  }, [jobCards, searchQuery]);
-
-  // Paginate job cards
-  const paginatedJobCards = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredJobCards.slice(startIndex, startIndex + pageSize);
-  }, [filteredJobCards, currentPage, pageSize]);
-
-  // Handle page change
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  // Handle page size change
-  const handlePageSizeChange = (size) => {
-    setPageSize(size);
-    setCurrentPage(1); // Reset to first page when changing page size
-  };
+  // Search is now handled server-side
 
   if (!jobCards || jobCards.length === 0) {
     return (
@@ -117,15 +82,7 @@ export default function JobCardList({ jobCards, showSearch = true }) {
           <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
             Find Job Cards
           </h2>
-          <SearchBar onSearch={setSearchQuery} />
-          {searchQuery && (
-            <p className="mt-3 text-sm text-gray-600">
-              Showing {filteredJobCards.length} results for:{" "}
-              <span className="font-semibold text-purple-700">
-                {searchQuery}
-              </span>
-            </p>
-          )}
+          <SearchBar />
         </div>
       )}
 
@@ -192,8 +149,8 @@ export default function JobCardList({ jobCards, showSearch = true }) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedJobCards.length > 0 ? (
-              paginatedJobCards.map((jobCard) => (
+            {jobCards.length > 0 ? (
+              jobCards.map((jobCard) => (
                 <tr
                   key={jobCard.id}
                   className="hover:bg-blue-50 transition-colors duration-150"
@@ -261,14 +218,25 @@ export default function JobCardList({ jobCards, showSearch = true }) {
         </table>
       </div>
 
-      {/* Pagination */}
-      <Pagination
-        totalItems={filteredJobCards.length}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
+      {/* Pagination and Page Size Selector */}
+      <div className="mt-6 bg-white p-4 rounded-lg shadow">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+          <div className="mb-4 md:mb-0">
+            <PageSizeSelector pageSize={pageSize} />
+          </div>
+          <div className="text-sm font-medium text-gray-900">
+            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} to{" "}
+            {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
+            entries
+          </div>
+        </div>
+
+        <Pagination
+          totalItems={totalCount}
+          currentPage={currentPage}
+          pageSize={pageSize}
+        />
+      </div>
     </div>
   );
 }

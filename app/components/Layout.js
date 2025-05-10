@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import SideNav from "./SideNav";
 import GlobalLoadingIndicator from "./GlobalLoadingIndicator";
+import { NavigationEvents } from "./NavigationEvents";
 import { useEffect } from "react";
 import "../styles/loading-animations.css";
 
@@ -34,6 +35,7 @@ export default function Layout({ children }) {
     return (
       <div className="min-h-screen bg-gray-50">
         <GlobalLoadingIndicator />
+        <NavigationEvents />
         {children}
       </div>
     );
@@ -42,6 +44,7 @@ export default function Layout({ children }) {
   return (
     <div className="h-screen overflow-hidden bg-gray-50 flex">
       <GlobalLoadingIndicator />
+      <NavigationEvents />
       <SideNav />
       <div className="flex-1 overflow-auto">
         <main className="py-8 px-4 sm:px-6 lg:px-8 md:px-10">{children}</main>

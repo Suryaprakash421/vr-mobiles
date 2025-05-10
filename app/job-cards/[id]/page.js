@@ -6,6 +6,7 @@ import Layout from "../../components/Layout";
 import Link from "next/link";
 import BackButton from "../../components/BackButton";
 import SimpleStatusDropdown from "../../components/SimpleStatusDropdown";
+import JobCardNavigation from "../../components/JobCardNavigation";
 
 export async function generateMetadata({ params }) {
   // Safely access params
@@ -64,6 +65,42 @@ export default async function JobCardDetailPage({ params }) {
   if (!jobCard) {
     redirect("/job-cards");
   }
+
+  // Get next and previous job card IDs for navigation
+  const [prevJobCard, nextJobCard] = await Promise.all([
+    // Get previous job card (created earlier)
+    prisma.jobCard.findFirst({
+      where: {
+        createdAt: {
+          lt: jobCard.createdAt, // Less than current job card's creation date
+        },
+      },
+      orderBy: {
+        createdAt: "desc", // Get the most recent one before current
+      },
+      select: {
+        id: true,
+        customerName: true,
+        billNo: true,
+      },
+    }),
+    // Get next job card (created later)
+    prisma.jobCard.findFirst({
+      where: {
+        createdAt: {
+          gt: jobCard.createdAt, // Greater than current job card's creation date
+        },
+      },
+      orderBy: {
+        createdAt: "asc", // Get the earliest one after current
+      },
+      select: {
+        id: true,
+        customerName: true,
+        billNo: true,
+      },
+    }),
+  ]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -279,6 +316,12 @@ export default async function JobCardDetailPage({ params }) {
             </div>
           </div>
         </div>
+
+        {/* Navigation between job cards */}
+        <JobCardNavigation
+          prevJobCard={prevJobCard}
+          nextJobCard={nextJobCard}
+        />
       </div>
     </Layout>
   );

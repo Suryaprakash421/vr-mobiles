@@ -26,12 +26,20 @@ export default function SearchBar({ onSearch }) {
         onSearch(searchTerm);
       }
       // Otherwise update the URL (for server-side filtering)
-      else if (searchTerm.trim()) {
-        router.push(
-          `/job-cards?search=${encodeURIComponent(searchTerm.trim())}`
-        );
-      } else {
-        router.push("/job-cards");
+      else {
+        // Create new URLSearchParams with current params
+        const params = new URLSearchParams(searchParams);
+
+        // Update search parameter and reset to first page
+        if (searchTerm.trim()) {
+          params.set("search", searchTerm.trim());
+        } else {
+          params.delete("search");
+        }
+        params.set("page", "1");
+
+        // Navigate to the new URL
+        router.push(`/job-cards?${params.toString()}`);
       }
     }, 300);
 
@@ -44,10 +52,20 @@ export default function SearchBar({ onSearch }) {
     // Immediately trigger search on form submit
     if (onSearch) {
       onSearch(searchTerm);
-    } else if (searchTerm.trim()) {
-      router.push(`/job-cards?search=${encodeURIComponent(searchTerm.trim())}`);
     } else {
-      router.push("/job-cards");
+      // Create new URLSearchParams with current params
+      const params = new URLSearchParams(searchParams);
+
+      // Update search parameter and reset to first page
+      if (searchTerm.trim()) {
+        params.set("search", searchTerm.trim());
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+
+      // Navigate to the new URL
+      router.push(`/job-cards?${params.toString()}`);
     }
   };
 
@@ -56,7 +74,15 @@ export default function SearchBar({ onSearch }) {
     if (onSearch) {
       onSearch("");
     } else {
-      router.push("/job-cards");
+      // Create new URLSearchParams with current params
+      const params = new URLSearchParams(searchParams);
+
+      // Remove search parameter and reset to first page
+      params.delete("search");
+      params.set("page", "1");
+
+      // Navigate to the new URL
+      router.push(`/job-cards?${params.toString()}`);
     }
   };
 

@@ -13,9 +13,20 @@ export default async function JobCardsPage({ searchParams }) {
     redirect("/login");
   }
 
-  // Get search parameter safely
-  const { search: searchParam } = searchParams || {};
+  // Get pagination and search parameters safely
+  const {
+    search: searchParam,
+    page: pageParam,
+    pageSize: pageSizeParam,
+  } = searchParams || {};
+
   const search = searchParam ? String(searchParam) : "";
+  const page = pageParam ? parseInt(pageParam) : 1;
+  const pageSize = pageSizeParam ? parseInt(pageSizeParam) : 5;
+
+  // Calculate pagination offsets
+  const skip = (page - 1) * pageSize;
+  const take = pageSize;
 
   let whereClause = {};
 
@@ -31,11 +42,19 @@ export default async function JobCardsPage({ searchParams }) {
     };
   }
 
+  // Get total count for pagination
+  const totalCount = await prisma.jobCard.count({
+    where: whereClause,
+  });
+
+  // Get paginated job cards
   const jobCards = await prisma.jobCard.findMany({
     where: whereClause,
     orderBy: {
       createdAt: "desc",
     },
+    skip,
+    take,
     include: {
       createdBy: {
         select: {
@@ -55,7 +74,12 @@ export default async function JobCardsPage({ searchParams }) {
           </h1>
         </div>
 
-        <JobCardList jobCards={jobCards} />
+        <JobCardList
+          jobCards={jobCards}
+          totalCount={totalCount}
+          currentPage={page}
+          pageSize={pageSize}
+        />
       </div>
     </Layout>
   );

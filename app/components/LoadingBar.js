@@ -34,6 +34,44 @@ export default function LoadingBar() {
     }
   }, [pathname, prevPathname]);
 
+  // Listen for custom navigation events
+  useEffect(() => {
+    const handleNavigationStart = () => {
+      setLoading(true);
+      setProgress(0);
+
+      // Simulate progress
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 8;
+        });
+      }, 100);
+
+      return () => clearInterval(interval);
+    };
+
+    const handleNavigationEnd = () => {
+      setProgress(100);
+      setTimeout(() => {
+        setLoading(false);
+        setProgress(0);
+      }, 800);
+    };
+
+    // Add event listeners
+    document.addEventListener("navigationStart", handleNavigationStart);
+    document.addEventListener("navigationEnd", handleNavigationEnd);
+
+    return () => {
+      document.removeEventListener("navigationStart", handleNavigationStart);
+      document.removeEventListener("navigationEnd", handleNavigationEnd);
+    };
+  }, []);
+
   // Complete loading when content is loaded
   useEffect(() => {
     if (loading) {
@@ -78,9 +116,9 @@ export default function LoadingBar() {
         setTimeout(() => {
           setLoading(false);
           setProgress(0);
-        }, 500);
+        }, 800); // Longer fade-out for better visibility
         observer.disconnect();
-      }, 5000); // 5 second maximum loading time
+      }, 8000); // 8 second maximum loading time for better visibility
 
       return () => {
         observer.disconnect();
@@ -89,21 +127,33 @@ export default function LoadingBar() {
     }
   }, [searchParams, loading]);
 
-  // Add click handler to track button clicks
+  // Add click handler to track button and link clicks
   useEffect(() => {
-    const handleButtonClick = (e) => {
-      if (e.target.tagName === "BUTTON" && !e.target.disabled) {
+    const handleClick = (e) => {
+      // Check for button clicks
+      if (
+        (e.target.tagName === "BUTTON" && !e.target.disabled) ||
+        // Check for link clicks that navigate within the app
+        (e.target.tagName === "A" &&
+          e.target.href &&
+          e.target.href.startsWith(window.location.origin)) ||
+        // Check for parent links (when clicking on a child of an <a> tag)
+        (e.target.closest &&
+          e.target.closest("a") &&
+          e.target.closest("a").href &&
+          e.target.closest("a").href.startsWith(window.location.origin))
+      ) {
         setLoading(true);
         setProgress(0);
 
-        // Simulate progress for button clicks
+        // Simulate progress for navigation
         const interval = setInterval(() => {
           setProgress((prev) => {
             if (prev >= 90) {
               clearInterval(interval);
               return 90;
             }
-            return prev + 10;
+            return prev + 8; // Slightly faster progress
           });
         }, 100);
 
@@ -115,8 +165,8 @@ export default function LoadingBar() {
           setTimeout(() => {
             setLoading(false);
             setProgress(0);
-          }, 500);
-        }, 2000);
+          }, 800); // Longer fade-out for better visibility
+        }, 3000); // Longer timeout for navigation
 
         return () => {
           clearInterval(interval);
@@ -125,16 +175,16 @@ export default function LoadingBar() {
       }
     };
 
-    document.addEventListener("click", handleButtonClick);
-    return () => document.removeEventListener("click", handleButtonClick);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
   }, []);
 
   if (!loading && progress === 0) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-2 z-50">
+    <div className="fixed top-0 left-0 right-0 h-2.5 z-50">
       <div
-        className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300 ease-out shadow-md shadow-blue-400/50"
+        className="h-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 transition-all duration-300 ease-out shadow-md shadow-blue-400/50"
         style={{ width: `${progress}%` }}
       />
       {/* Add a pulsing dot at the end of the progress bar */}
@@ -143,6 +193,14 @@ export default function LoadingBar() {
           className="absolute top-0 h-full aspect-square rounded-full bg-white shadow-lg shadow-purple-500/50 animate-pulse"
           style={{ left: `${progress}%`, transform: "translateX(-50%)" }}
         />
+      )}
+
+      {/* Add a subtle loading text indicator */}
+      {progress > 0 && progress < 100 && (
+        <div className="fixed top-4 right-4 bg-white px-3 py-1.5 rounded-full shadow-md border border-gray-200 flex items-center">
+          <div className="w-3 h-3 rounded-full bg-blue-600 mr-2 animate-pulse"></div>
+          <span className="text-xs font-medium text-gray-900">Loading...</span>
+        </div>
       )}
     </div>
   );
