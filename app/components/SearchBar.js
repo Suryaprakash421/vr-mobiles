@@ -38,8 +38,9 @@ export default function SearchBar({ onSearch, searchBarRef }) {
         }
         params.set("page", "1");
 
-        // Navigate to the new URL
-        router.push(`/job-cards?${params.toString()}`);
+        // Navigate to the new URL with the current path
+        const currentPath = window.location.pathname;
+        router.push(`${currentPath}?${params.toString()}`);
       }
     }, 300);
 
@@ -64,8 +65,9 @@ export default function SearchBar({ onSearch, searchBarRef }) {
       }
       params.set("page", "1");
 
-      // Navigate to the new URL
-      router.push(`/job-cards?${params.toString()}`);
+      // Navigate to the new URL with the current path
+      const currentPath = window.location.pathname;
+      router.push(`${currentPath}?${params.toString()}`);
     }
   };
 
@@ -81,8 +83,9 @@ export default function SearchBar({ onSearch, searchBarRef }) {
       params.delete("search");
       params.set("page", "1");
 
-      // Navigate to the new URL
-      router.push(`/job-cards?${params.toString()}`);
+      // Navigate to the new URL with the current path
+      const currentPath = window.location.pathname;
+      router.push(`${currentPath}?${params.toString()}`);
     }
   };
 

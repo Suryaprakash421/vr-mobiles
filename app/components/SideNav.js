@@ -12,6 +12,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
+  FaUsers,
 } from "react-icons/fa";
 
 export default function SideNav() {
@@ -143,6 +144,19 @@ export default function SideNav() {
             >
               <FaSearch size={20} />
               <span className="font-medium">Search</span>
+            </Link>
+
+            <Link
+              href="/customers"
+              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                pathname.startsWith("/customers")
+                  ? "bg-blue-700 text-white"
+                  : "text-blue-100 hover:bg-blue-700"
+              }`}
+              onClick={closeSidebar}
+            >
+              <FaUsers size={20} />
+              <span className="font-medium">Customer Details</span>
             </Link>
           </nav>
 

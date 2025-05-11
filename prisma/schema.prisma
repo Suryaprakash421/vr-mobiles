@@ -17,16 +17,28 @@ model User {
   jobCards  JobCard[]
 }
 
-model JobCard {
+model Customer {
   id            Int      @id @default(autoincrement())
-  billNo        Int?     @unique
-  date          DateTime @default(now())
-  isOn          Boolean  @default(false)
-  isOff         Boolean  @default(false)
-  hasBattery    Boolean  @default(false)
-  hasDoor       Boolean  @default(false)
-  hasSim        Boolean  @default(false)
-  hasSlot       Boolean  @default(false)
+  name          String
+  mobileNumber  String   @unique
+  address       String?
+  aadhaarNumber String?
+  visitCount    Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  // Temporarily removed jobCards relation to fix the issue
+}
+
+model JobCard {
+  id            Int       @id @default(autoincrement())
+  billNo        Int?      @unique
+  date          DateTime  @default(now())
+  isOn          Boolean   @default(false)
+  isOff         Boolean   @default(false)
+  hasBattery    Boolean   @default(false)
+  hasDoor       Boolean   @default(false)
+  hasSim        Boolean   @default(false)
+  hasSlot       Boolean   @default(false)
   customerName  String
   address       String?
   mobileNumber  String
@@ -37,9 +49,11 @@ model JobCard {
   estimate      Float?
   advance       Float?
   finalAmount   Float?
-  status        String   @default("pending")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status        String    @default("pending")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   userId        Int
-  createdBy     User     @relation(fields: [userId], references: [id])
+  createdBy     User      @relation(fields: [userId], references: [id])
+  // Temporarily removed customer relation to fix the issue
+  // Will add back after database is properly migrated
 }

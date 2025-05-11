@@ -82,6 +82,26 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     }
 
+    // Check if a customer with this mobile number exists
+    let customerId = null;
+    if (data.mobileNumber) {
+      try {
+        const existingCustomer = await prisma.customer.findUnique({
+          where: {
+            mobileNumber: data.mobileNumber,
+          },
+        });
+
+        if (existingCustomer) {
+          customerId = existingCustomer.id;
+          console.log("Found existing customer:", existingCustomer.id);
+        }
+      } catch (customerError) {
+        console.error("Error finding customer:", customerError);
+        // Continue without customer ID if there's an error
+      }
+    }
+
     // Prepare the data for creation
     const jobCardData = {
       customerName: data.customerName,
@@ -102,26 +122,50 @@ export async function POST(request) {
       finalAmount: data.finalAmount || null,
       status: data.status || "pending", // Add the status field with a default value
       userId: userId,
+      // Removed customerId field to avoid Prisma errors
     };
 
     console.log("Creating job card with data:", jobCardData);
 
-    // Create the job card without billNo first
-    const jobCard = await prisma.jobCard.create({
-      data: jobCardData,
-    });
+    try {
+      // Create the job card without billNo first
+      const jobCard = await prisma.jobCard.create({
+        data: jobCardData,
+      });
 
-    console.log("Job card created:", jobCard);
+      console.log("Job card created:", jobCard);
 
-    // Update the billNo to match the id in a separate step
-    const updatedJobCard = await prisma.jobCard.update({
-      where: { id: jobCard.id },
-      data: { billNo: jobCard.id },
-    });
+      try {
+        // Update the billNo to match the id in a separate step
+        const updatedJobCard = await prisma.jobCard.update({
+          where: { id: jobCard.id },
+          data: { billNo: jobCard.id },
+        });
 
-    console.log("Updated job card with billNo:", updatedJobCard);
-
-    return NextResponse.json(updatedJobCard, { status: 201 });
+        console.log("Updated job card with billNo:", updatedJobCard);
+        return NextResponse.json(updatedJobCard, { status: 201 });
+      } catch (updateError) {
+        console.error("Error updating job card with billNo:", updateError);
+        // Return the original job card if update fails
+        return NextResponse.json(
+          {
+            ...jobCard,
+            warning: "Job card created but billNo could not be updated",
+          },
+          { status: 201 }
+        );
+      }
+    } catch (createError) {
+      console.error("Error creating job card:", createError);
+      return NextResponse.json(
+        {
+          error: "Failed to create job card",
+          details: createError.message,
+          code: createError.code,
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Error creating job card:", error);
     console.error("Error stack:", error.stack);

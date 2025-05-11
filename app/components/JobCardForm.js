@@ -86,24 +86,203 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
 
       console.log(`Sending ${method} request to ${url}`);
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedData),
-      });
+      try {
+        // Use absolute URL to avoid parsing issues
+        const baseUrl = window.location.origin;
+        const absoluteUrl = `${baseUrl}${url}`;
+        console.log(`Sending ${method} request to ${absoluteUrl}`);
 
-      const responseData = await response.json();
-      console.log("Response:", response.status, responseData);
+        const response = await fetch(absoluteUrl, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formattedData),
+        });
 
-      if (!response.ok) {
-        console.error("API Error Response:", responseData);
-        throw new Error(
-          responseData.details ||
-            responseData.error ||
-            "Failed to save job card"
-        );
+        let responseData;
+        let responseText = "";
+
+        try {
+          // First try to get the raw text
+          responseText = await response.text();
+          console.log("Raw response:", responseText);
+
+          // Then try to parse it as JSON
+          try {
+            responseData = JSON.parse(responseText);
+            console.log("Parsed response:", response.status, responseData);
+          } catch (parseError) {
+            console.error("Error parsing JSON response:", parseError);
+            responseData = {
+              error: "Invalid JSON response from server",
+              rawResponse: responseText.substring(0, 100), // Include part of the raw response
+            };
+          }
+        } catch (textError) {
+          console.error("Error getting response text:", textError);
+          responseData = { error: "Could not read server response" };
+        }
+
+        if (!response.ok) {
+          console.error("API Error Response:", responseData);
+          throw new Error(
+            responseData.details ||
+              responseData.error ||
+              `Failed to save job card (Status: ${response.status})`
+          );
+        }
+
+        // If we got here, the request was successful
+        console.log("Job card saved successfully");
+      } catch (fetchError) {
+        console.error("Fetch error:", fetchError);
+
+        // Handle specific Prisma errors
+        if (fetchError.message.includes("findUnique")) {
+          throw new Error(
+            "Database error: Could not find customer record. The database might not be properly set up."
+          );
+        } else if (fetchError.message.includes("Prisma")) {
+          throw new Error("Database error: " + fetchError.message);
+        } else {
+          throw new Error(`Network error: ${fetchError.message}`);
+        }
+      }
+
+      // Job card was successfully created, now handle customer record
+      // We'll continue even if customer operations fail
+
+      // Check if we need to create or update a customer record
+      if (formattedData.mobileNumber) {
+        try {
+          console.log(
+            "Checking for existing customer with mobile:",
+            formattedData.mobileNumber
+          );
+
+          // Check if customer exists - use absolute URL to avoid parsing issues
+          const baseUrl = window.location.origin;
+
+          try {
+            const customerResponse = await fetch(
+              `${baseUrl}/api/customers-simple?search=${formattedData.mobileNumber}`
+            );
+
+            if (!customerResponse.ok) {
+              console.error(
+                `Customer search failed with status: ${customerResponse.status}`
+              );
+              // Continue with customer creation even if search fails
+              throw new Error(
+                `Customer search failed with status: ${customerResponse.status}`
+              );
+            }
+
+            // Get the response text first
+            const responseText = await customerResponse.text();
+            console.log("Raw customer search response:", responseText);
+
+            // Try to parse it as JSON
+            let customerData;
+            try {
+              customerData = JSON.parse(responseText);
+              console.log("Customer search result:", customerData);
+            } catch (parseError) {
+              console.error(
+                "Error parsing customer search response:",
+                parseError
+              );
+              // If we can't parse the response, assume no customers found
+              customerData = { customers: [] };
+            }
+
+            if (customerData.customers && customerData.customers.length > 0) {
+              // Customer exists, update visit count
+              const customer = customerData.customers[0];
+              console.log("Updating existing customer:", customer.id);
+
+              const updateResponse = await fetch(
+                `${baseUrl}/api/customers/${customer.id}`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    name: formattedData.customerName,
+                    mobileNumber: formattedData.mobileNumber,
+                    address: formattedData.address,
+                    aadhaarNumber: formattedData.aadhaarNumber,
+                    visitCount: customer.visitCount + 1,
+                  }),
+                }
+              );
+
+              if (!updateResponse.ok) {
+                console.error(
+                  "Failed to update customer:",
+                  await updateResponse.text()
+                );
+              } else {
+                console.log("Customer updated successfully");
+              }
+            } else {
+              // Customer doesn't exist, create new
+              console.log("Creating new customer");
+
+              try {
+                const createResponse = await fetch(`${baseUrl}/api/customers`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    name: formattedData.customerName,
+                    mobileNumber: formattedData.mobileNumber,
+                    address: formattedData.address,
+                    aadhaarNumber: formattedData.aadhaarNumber,
+                  }),
+                });
+
+                // Get the response text first
+                const responseText = await createResponse.text();
+                console.log("Raw customer creation response:", responseText);
+
+                // Try to parse it as JSON
+                let responseData;
+                try {
+                  responseData = JSON.parse(responseText);
+                  console.log(
+                    "Parsed customer creation response:",
+                    responseData
+                  );
+                } catch (parseError) {
+                  console.error(
+                    "Error parsing customer creation response:",
+                    parseError
+                  );
+                  responseData = { error: "Invalid JSON response" };
+                }
+
+                if (!createResponse.ok) {
+                  console.error("Failed to create customer:", responseData);
+                  // Don't throw an error here, just log it
+                } else {
+                  console.log("Customer created successfully:", responseData);
+                }
+              } catch (createError) {
+                console.error("Error in customer creation fetch:", createError);
+                // Don't throw an error here, just log it
+              }
+            }
+          } catch (customerErr) {
+            console.error("Error handling customer record:", customerErr);
+            // Don't block the main flow if customer update fails
+          }
+        } catch (outerErr) {
+          console.error("Outer customer handling error:", outerErr);
+        }
       }
 
       // Redirect to job cards list

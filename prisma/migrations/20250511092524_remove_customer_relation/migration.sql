@@ -1,0 +1,41 @@
+/*
+  Warnings:
+
+  - You are about to drop the column `customerId` on the `JobCard` table. All the data in the column will be lost.
+
+*/
+-- RedefineTables
+PRAGMA defer_foreign_keys=ON;
+PRAGMA foreign_keys=OFF;
+CREATE TABLE "new_JobCard" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "billNo" INTEGER,
+    "date" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isOn" BOOLEAN NOT NULL DEFAULT false,
+    "isOff" BOOLEAN NOT NULL DEFAULT false,
+    "hasBattery" BOOLEAN NOT NULL DEFAULT false,
+    "hasDoor" BOOLEAN NOT NULL DEFAULT false,
+    "hasSim" BOOLEAN NOT NULL DEFAULT false,
+    "hasSlot" BOOLEAN NOT NULL DEFAULT false,
+    "customerName" TEXT NOT NULL,
+    "address" TEXT,
+    "mobileNumber" TEXT NOT NULL,
+    "complaint" TEXT NOT NULL,
+    "model" TEXT NOT NULL,
+    "admissionFees" REAL,
+    "aadhaarNumber" TEXT,
+    "estimate" REAL,
+    "advance" REAL,
+    "finalAmount" REAL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    "userId" INTEGER NOT NULL,
+    CONSTRAINT "JobCard_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+INSERT INTO "new_JobCard" ("aadhaarNumber", "address", "admissionFees", "advance", "billNo", "complaint", "createdAt", "customerName", "date", "estimate", "finalAmount", "hasBattery", "hasDoor", "hasSim", "hasSlot", "id", "isOff", "isOn", "mobileNumber", "model", "status", "updatedAt", "userId") SELECT "aadhaarNumber", "address", "admissionFees", "advance", "billNo", "complaint", "createdAt", "customerName", "date", "estimate", "finalAmount", "hasBattery", "hasDoor", "hasSim", "hasSlot", "id", "isOff", "isOn", "mobileNumber", "model", "status", "updatedAt", "userId" FROM "JobCard";
+DROP TABLE "JobCard";
+ALTER TABLE "new_JobCard" RENAME TO "JobCard";
+CREATE UNIQUE INDEX "JobCard_billNo_key" ON "JobCard"("billNo");
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=OFF;
