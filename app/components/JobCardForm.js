@@ -165,8 +165,14 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
           const baseUrl = window.location.origin;
 
           try {
+            // First, try a direct search for the exact mobile number
+            console.log(
+              `Searching for customer with exact mobile number: ${formattedData.mobileNumber}`
+            );
             const customerResponse = await fetch(
-              `${baseUrl}/api/customers-simple?search=${formattedData.mobileNumber}`
+              `${baseUrl}/api/customers-simple?search=${encodeURIComponent(
+                formattedData.mobileNumber
+              )}`
             );
 
             if (!customerResponse.ok) {
@@ -188,6 +194,31 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
             try {
               customerData = JSON.parse(responseText);
               console.log("Customer search result:", customerData);
+
+              // If no customers found with the search, try a direct lookup
+              if (
+                !customerData.customers ||
+                customerData.customers.length === 0
+              ) {
+                console.log(
+                  "No customers found in search, trying direct lookup"
+                );
+
+                // Try to find an exact match by mobile number
+                const exactMatchCustomers = customerData.customers
+                  ? customerData.customers.filter(
+                      (c) => c.mobileNumber === formattedData.mobileNumber
+                    )
+                  : [];
+
+                if (exactMatchCustomers.length > 0) {
+                  console.log(
+                    "Found exact match by mobile number:",
+                    exactMatchCustomers[0]
+                  );
+                  customerData.customers = exactMatchCustomers;
+                }
+              }
             } catch (parseError) {
               console.error(
                 "Error parsing customer search response:",
@@ -266,8 +297,29 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
                 }
 
                 if (!createResponse.ok) {
-                  console.error("Failed to create customer:", responseData);
-                  // Don't throw an error here, just log it
+                  // Don't log this as an error since it might be expected (e.g., duplicate mobile number)
+                  console.log(
+                    "Customer creation response (not OK):",
+                    responseData
+                  );
+
+                  // Check if this is a duplicate mobile number error
+                  if (
+                    responseData.error &&
+                    responseData.error.includes("already exists")
+                  ) {
+                    console.log(
+                      "Customer with this mobile number already exists - this is expected and not an error"
+                    );
+                    // This is actually expected behavior - the customer already exists
+                    // We'll just update the existing customer's visit count in the next job card
+                  } else {
+                    // For other errors, show a warning to the user but don't block the job card creation
+                    console.warn(
+                      "Non-critical error creating customer:",
+                      responseData.error || "Unknown error"
+                    );
+                  }
                 } else {
                   console.log("Customer created successfully:", responseData);
                 }

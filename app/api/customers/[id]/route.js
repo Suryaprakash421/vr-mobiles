@@ -123,6 +123,10 @@ export async function PUT(request, { params }) {
         mobileNumber: data.mobileNumber,
         address: data.address,
         aadhaarNumber: data.aadhaarNumber,
+        visitCount:
+          data.visitCount !== undefined
+            ? data.visitCount
+            : existingCustomer.visitCount,
       },
     });
 

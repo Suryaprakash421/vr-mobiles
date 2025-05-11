@@ -95,6 +95,23 @@ export async function POST(request) {
         if (existingCustomer) {
           customerId = existingCustomer.id;
           console.log("Found existing customer:", existingCustomer.id);
+
+          // Update the customer's visit count
+          try {
+            const updatedCustomer = await prisma.customer.update({
+              where: { id: existingCustomer.id },
+              data: {
+                visitCount: existingCustomer.visitCount + 1,
+              },
+            });
+            console.log(
+              "Updated customer visit count:",
+              updatedCustomer.visitCount
+            );
+          } catch (updateError) {
+            console.error("Error updating customer visit count:", updateError);
+            // Continue even if visit count update fails
+          }
         }
       } catch (customerError) {
         console.error("Error finding customer:", customerError);
@@ -122,7 +139,7 @@ export async function POST(request) {
       finalAmount: data.finalAmount || null,
       status: data.status || "pending", // Add the status field with a default value
       userId: userId,
-      // Removed customerId field to avoid Prisma errors
+      customerId: customerId, // Link to customer if exists
     };
 
     console.log("Creating job card with data:", jobCardData);

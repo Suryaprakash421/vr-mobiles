@@ -19,8 +19,12 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const page = parseInt(searchParams.get("page") || "1");
-    const pageSize = parseInt(searchParams.get("pageSize") || "10");
-    const skip = (page - 1) * pageSize;
+    const pageSize = parseInt(searchParams.get("pageSize") || "5");
+
+    // Validate pagination parameters
+    const validatedPage = page > 0 ? page : 1;
+    const validatedPageSize = pageSize > 0 && pageSize <= 100 ? pageSize : 5;
+    const skip = (validatedPage - 1) * validatedPageSize;
 
     // Build where clause for search
     let whereClause = {};
@@ -46,20 +50,24 @@ export async function GET(request) {
         updatedAt: "desc",
       },
       skip,
-      take: pageSize,
+      take: validatedPageSize,
     });
 
     return NextResponse.json({
       customers,
       totalCount,
-      page,
-      pageSize,
-      totalPages: Math.ceil(totalCount / pageSize),
+      page: validatedPage,
+      pageSize: validatedPageSize,
+      totalPages: Math.ceil(totalCount / validatedPageSize),
     });
   } catch (error) {
     console.error("Error fetching customers:", error);
     return NextResponse.json(
-      { error: "Failed to fetch customers" },
+      {
+        error: "Failed to fetch customers",
+        details: error.message,
+        stack: error.stack,
+      },
       { status: 500 }
     );
   }
