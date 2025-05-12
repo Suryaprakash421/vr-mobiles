@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-export default function Pagination({
+export default function ImprovedPagination({
   totalItems,
   currentPage = 1,
   pageSize = 10,
@@ -20,29 +20,24 @@ export default function Pagination({
     setPageCount(Math.ceil(totalItems / pageSize));
   }, [totalItems, pageSize]);
 
-  // Handle page change with a more direct approach
-  const handlePageChange = (newPage) => {
+  // Handle page change without page refresh
+  const handlePageChange = useCallback((newPage) => {
     if (newPage >= 1 && newPage <= pageCount) {
       // Create new URLSearchParams with current params
       const params = new URLSearchParams(searchParams.toString());
-
+      
       // Update page parameter
       params.set("page", newPage.toString());
-
-      // Use window.location.href for a hard navigation that ensures the page changes
-      // This is a more direct approach that bypasses Next.js router issues
-      const url = `${pathname}?${params.toString()}`;
-
-      // Use replace state to avoid adding to browser history
-      window.history.pushState({}, "", url);
-
-      // Force a reload of the current page to ensure data is fetched correctly
-      window.location.reload();
+      
+      // Use Next.js router to navigate without a full page refresh
+      router.push(`${pathname}?${params.toString()}`, { 
+        scroll: false,  // Prevent scrolling to top
+      });
     }
-  };
+  }, [pageCount, pathname, router, searchParams]);
 
   // Generate page numbers to display
-  const getPageNumbers = () => {
+  const getPageNumbers = useCallback(() => {
     const pages = [];
     const maxPagesToShow = 5;
 
@@ -66,7 +61,7 @@ export default function Pagination({
 
       // Adjust if at the end
       if (currentPage >= pageCount - 1) {
-        startPage = pageCount - 3;
+        startPage = Math.max(2, pageCount - 3);
       }
 
       // Add ellipsis if needed
@@ -76,7 +71,9 @@ export default function Pagination({
 
       // Add middle pages
       for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
+        if (i > 1 && i < pageCount) {
+          pages.push(i);
+        }
       }
 
       // Add ellipsis if needed
@@ -85,11 +82,13 @@ export default function Pagination({
       }
 
       // Always show last page
-      pages.push(pageCount);
+      if (pageCount > 1) {
+        pages.push(pageCount);
+      }
     }
 
     return pages;
-  };
+  }, [currentPage, pageCount]);
 
   // Don't show pagination if there's only one page
   if (pageCount <= 1) return null;

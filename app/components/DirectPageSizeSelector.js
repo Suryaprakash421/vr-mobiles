@@ -1,24 +1,34 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
-export default function PageSizeSelector({ pageSize }) {
+export default function DirectPageSizeSelector({ pageSize }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isChanging, setIsChanging] = useState(false);
 
   const handlePageSizeChange = (e) => {
-    const newPageSize = e.target.value;
+    if (isChanging) return;
 
-    // Create new URLSearchParams with current params
-    const params = new URLSearchParams(searchParams);
+    const newPageSize = e.target.value;
+    setIsChanging(true);
+
+    // Create a new URLSearchParams object to preserve existing parameters
+    const params = new URLSearchParams(searchParams.toString());
 
     // Update page size and reset to first page
     params.set("pageSize", newPageSize);
     params.set("page", "1");
 
-    // Navigate to the new URL with scroll: false to prevent jumping
+    // Use Next.js router for client-side navigation without full page refresh
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+    // Reset changing state after a short delay
+    setTimeout(() => {
+      setIsChanging(false);
+    }, 300);
   };
 
   return (

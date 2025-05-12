@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import SearchBar from "./SearchBar";
-import Pagination from "./Pagination";
+import DirectSearchBar from "./DirectSearchBar";
+import DirectPagination from "./DirectPagination";
 import LoadingOverlay from "./LoadingOverlay";
 import SimpleStatusDropdown from "./SimpleStatusDropdown";
-import PageSizeSelector from "./PageSizeSelector";
+import DirectPageSizeSelector from "./DirectPageSizeSelector";
 
 export default function JobCardList({
   jobCards,
@@ -67,7 +67,7 @@ export default function JobCardList({
     }
   };
 
-  // Search is now handled server-side
+  // Search is handled server-side through URL parameters
 
   if (!jobCards || jobCards.length === 0) {
     return (
@@ -77,7 +77,7 @@ export default function JobCardList({
             <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
               Find Job Cards
             </h2>
-            <SearchBar searchBarRef={searchBarRef} />
+            <DirectSearchBar searchBarRef={searchBarRef} />
           </div>
         )}
         <div className="text-center py-10 bg-white rounded-lg shadow">
@@ -112,7 +112,7 @@ export default function JobCardList({
           <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
             Find Job Cards
           </h2>
-          <SearchBar searchBarRef={searchBarRef} />
+          <DirectSearchBar searchBarRef={searchBarRef} />
         </div>
       )}
 
@@ -252,7 +252,7 @@ export default function JobCardList({
       <div className="mt-6 bg-white p-4 rounded-lg shadow">
         <div className="flex flex-col md:flex-row justify-between items-center mb-4">
           <div className="mb-4 md:mb-0">
-            <PageSizeSelector pageSize={pageSize} />
+            <DirectPageSizeSelector pageSize={pageSize} />
           </div>
           <div className="text-sm font-medium text-gray-900">
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} to{" "}
@@ -261,7 +261,7 @@ export default function JobCardList({
           </div>
         </div>
 
-        <Pagination
+        <DirectPagination
           totalItems={totalCount}
           currentPage={currentPage}
           pageSize={pageSize}

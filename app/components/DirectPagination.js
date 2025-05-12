@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-export default function Pagination({
+export default function DirectPagination({
   totalItems,
   currentPage = 1,
   pageSize = 10,
@@ -12,32 +12,32 @@ export default function Pagination({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
   const [pageCount, setPageCount] = useState(Math.ceil(totalItems / pageSize));
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Update page count when totalItems or pageSize changes
   useEffect(() => {
     setPageCount(Math.ceil(totalItems / pageSize));
   }, [totalItems, pageSize]);
 
-  // Handle page change with a more direct approach
+  // Handle page change with client-side navigation
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pageCount) {
-      // Create new URLSearchParams with current params
+    if (newPage >= 1 && newPage <= pageCount && !isNavigating) {
+      setIsNavigating(true);
+
+      // Create a new URLSearchParams object to preserve existing parameters
       const params = new URLSearchParams(searchParams.toString());
 
       // Update page parameter
       params.set("page", newPage.toString());
 
-      // Use window.location.href for a hard navigation that ensures the page changes
-      // This is a more direct approach that bypasses Next.js router issues
-      const url = `${pathname}?${params.toString()}`;
+      // Use Next.js router for client-side navigation without full page refresh
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
 
-      // Use replace state to avoid adding to browser history
-      window.history.pushState({}, "", url);
-
-      // Force a reload of the current page to ensure data is fetched correctly
-      window.location.reload();
+      // Reset navigation state after a short delay
+      setTimeout(() => {
+        setIsNavigating(false);
+      }, 300);
     }
   };
 
@@ -66,7 +66,7 @@ export default function Pagination({
 
       // Adjust if at the end
       if (currentPage >= pageCount - 1) {
-        startPage = pageCount - 3;
+        startPage = Math.max(2, pageCount - 3);
       }
 
       // Add ellipsis if needed
@@ -76,7 +76,9 @@ export default function Pagination({
 
       // Add middle pages
       for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
+        if (i > 1 && i < pageCount) {
+          pages.push(i);
+        }
       }
 
       // Add ellipsis if needed
@@ -85,7 +87,9 @@ export default function Pagination({
       }
 
       // Always show last page
-      pages.push(pageCount);
+      if (pageCount > 1) {
+        pages.push(pageCount);
+      }
     }
 
     return pages;

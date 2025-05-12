@@ -1,54 +1,139 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import LoadingOverlay from "./LoadingOverlay";
-import Pagination from "./Pagination";
+import DirectPagination from "./DirectPagination";
+import DirectSearchBar from "./DirectSearchBar";
+import DirectPageSizeSelector from "./DirectPageSizeSelector";
 
 export default function CustomerTable() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const searchBarRef = useRef();
+  const isInitialLoad = useRef(true);
 
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
 
-  // Get pagination parameters from URL
-  const currentPage = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "5");
+  // Get search and pagination parameters from URL
+  // Use window.location.search to ensure we get the most current URL parameters
+  const urlParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams(searchParams.toString());
+
+  const search = urlParams.get("search") || "";
+  const currentPage = parseInt(urlParams.get("page") || "1");
+  const pageSize = parseInt(urlParams.get("pageSize") || "5");
 
   // Pagination state
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [currentPage, pageSize, searchParams]);
+  // Extract the current URL parameters we need to track
+  const urlPage = searchParams.get("page");
+  const urlPageSize = searchParams.get("pageSize");
+  const urlSearch = searchParams.get("search");
 
-  async function fetchCustomers() {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `/api/customers?page=${currentPage}&pageSize=${pageSize}`
-      );
+  // Track the last URL parameters to detect changes
+  const lastUrlParamsRef = useRef({
+    page: urlPage,
+    pageSize: urlPageSize,
+    search: urlSearch,
+  });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch customers: ${response.status}`);
+  // Function to fetch customers data
+  const fetchCustomers = useCallback(
+    async (isSearching = false) => {
+      try {
+        // Only show loading spinner on initial load, not during search
+        if (!isSearching) {
+          setLoading(true);
+        }
+
+        // Get the current URL parameters directly from window.location
+        // This ensures we always have the most up-to-date URL parameters
+        const currentUrlParams =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search)
+            : new URLSearchParams(searchParams.toString());
+
+        const page = currentUrlParams.get("page") || "1";
+        const size = currentUrlParams.get("pageSize") || "5";
+        const searchTerm = currentUrlParams.get("search") || "";
+
+        // Build the query string with current parameters
+        const queryParams = new URLSearchParams();
+        queryParams.set("page", page);
+        queryParams.set("pageSize", size);
+        if (searchTerm) {
+          queryParams.set("search", searchTerm);
+        }
+
+        const response = await fetch(
+          `/api/customers?${queryParams.toString()}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch customers: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setCustomers(data.customers || []);
+        setTotalCount(data.totalCount || 0);
+        setTotalPages(Math.ceil((data.totalCount || 0) / parseInt(size)));
+
+        // Update the last URL parameters
+        lastUrlParamsRef.current = {
+          page,
+          pageSize: size,
+          search: searchTerm,
+        };
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+        setError(err.message || "Failed to load customers");
+      } finally {
+        setLoading(false);
+        setSearching(false);
+        isInitialLoad.current = false;
       }
+    },
+    [searchParams]
+  ); // Only depend on searchParams
 
-      const data = await response.json();
-      setCustomers(data.customers || []);
-      setTotalCount(data.totalCount || 0);
-      setTotalPages(Math.ceil((data.totalCount || 0) / pageSize));
-    } catch (err) {
-      console.error("Error fetching customers:", err);
-      setError(err.message || "Failed to load customers");
-    } finally {
-      setLoading(false);
+  // Effect for initial load and URL parameter changes
+  useEffect(() => {
+    // Get parameters directly from window.location for the most up-to-date values
+    const currentUrlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams(searchParams.toString());
+
+    const currentPage = currentUrlParams.get("page");
+    const currentPageSize = currentUrlParams.get("pageSize");
+    const currentSearch = currentUrlParams.get("search");
+
+    // Check if any relevant URL parameters have changed
+    const paramsChanged =
+      currentPage !== lastUrlParamsRef.current.page ||
+      currentPageSize !== lastUrlParamsRef.current.pageSize ||
+      currentSearch !== lastUrlParamsRef.current.search;
+
+    // If it's a search operation, we'll handle it separately
+    if (currentSearch && !isInitialLoad.current && paramsChanged) {
+      setSearching(true);
     }
-  }
+
+    // Only fetch if parameters changed or it's the initial load
+    if (paramsChanged || isInitialLoad.current) {
+      fetchCustomers(currentSearch && !isInitialLoad.current);
+    }
+  }, [fetchCustomers, searchParams]);
 
   // We don't need this function anymore as the Pagination component
   // will handle page changes through URL parameters
@@ -69,7 +154,8 @@ export default function CustomerTable() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  if (loading) {
+  // Only show full loading screen on initial load
+  if (loading && isInitialLoad.current) {
     return (
       <div className="bg-white shadow-md rounded-lg p-6">
         <div className="flex justify-center items-center h-40">
@@ -131,71 +217,112 @@ export default function CustomerTable() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center">
-          <span className="text-sm text-gray-700 mr-2">Show</span>
-          <select
-            value={pageSize}
-            onChange={handlePageSizeChange}
-            className="border border-gray-300 rounded-md text-gray-900 px-3 py-1 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-          </select>
-          <span className="text-sm text-gray-700 ml-2">entries</span>
-        </div>
-        <div className="text-sm text-gray-700">
-          Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} to{" "}
-          {Math.min(currentPage * pageSize, totalCount)} of {totalCount} entries
-        </div>
+      {/* Search Bar */}
+      <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl shadow-sm relative">
+        <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+          Find Customers
+        </h2>
+        <DirectSearchBar searchBarRef={searchBarRef} />
+
+        {/* Subtle search loading indicator */}
+        {searching && (
+          <div className="absolute top-2 right-2">
+            <div className="animate-pulse flex space-x-1">
+              <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+              <div className="h-2 w-2 bg-indigo-600 rounded-full animation-delay-200"></div>
+              <div className="h-2 w-2 bg-purple-600 rounded-full animation-delay-500"></div>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+      {/* No customers message */}
+      {customers.length === 0 && !loading && (
+        <div className="text-center py-10 bg-white rounded-lg shadow">
+          <p className="text-gray-500">No customers found.</p>
+          {searchParams?.get("search") && (
+            <button
+              onClick={() => {
+                // Clear the search input field
+                if (searchBarRef.current) {
+                  searchBarRef.current.clearSearch();
+                } else {
+                  // Fallback if ref is not available
+                  const params = new URLSearchParams();
+                  params.set("page", "1");
+                  router.push(`/customers?${params.toString()}`);
+                }
+              }}
+              className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
+            >
+              Clear Search
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Customer Table */}
+      {customers.length > 0 && (
+        <div
+          className={`overflow-x-auto bg-white rounded-lg shadow relative ${
+            searching ? "opacity-70 transition-opacity duration-300" : ""
+          }`}
+        >
+          {/* Overlay loading indicator for search operations */}
+          {searching && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-white bg-opacity-30">
+              <div className="animate-pulse flex space-x-2">
+                <div className="h-3 w-3 bg-blue-600 rounded-full"></div>
+                <div className="h-3 w-3 bg-indigo-600 rounded-full animation-delay-200"></div>
+                <div className="h-3 w-3 bg-purple-600 rounded-full animation-delay-500"></div>
+              </div>
+            </div>
+          )}
+          <table
+            className="min-w-full divide-y divide-gray-200"
+            style={{ position: "relative", zIndex: 0 }}
+          >
+            <thead className="bg-gradient-to-r from-blue-700 to-violet-600">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
                 >
                   S.No
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
                 >
                   Name
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
                 >
                   Contact Number
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
                 >
                   Aadhar Number
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
                 >
                   Address
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
                 >
                   Visits
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
                 >
                   Actions
                 </th>
@@ -203,101 +330,72 @@ export default function CustomerTable() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {customers.map((customer, index) => (
-                <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {(currentPage - 1) * pageSize + index + 1}
-                    </div>
+                <tr
+                  key={customer.id}
+                  className="hover:bg-blue-50 transition-colors duration-150"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700">
+                    {(currentPage - 1) * pageSize + index + 1}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {customer.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {customer.mobileNumber}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {customer.aadhaarNumber || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
+                    {customer.address || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {customer.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {customer.mobileNumber}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {customer.aadhaarNumber || "N/A"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 max-w-xs truncate">
-                      {customer.address || "N/A"}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {customer.visitCount} visits
-                      </span>
-                    </div>
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {customer.visitCount} visits
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/customers/${customer.id}`}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="View"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      </Link>
-                      <Link
-                        href={`/customers/${customer.id}/edit`}
-                        className="text-green-600 hover:text-green-900"
-                        title="Edit"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </Link>
-                    </div>
+                    <Link
+                      href={`/customers/${customer.id}`}
+                      className="inline-block px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium mr-2 transition-colors"
+                    >
+                      View
+                    </Link>
+                    <Link
+                      href={`/customers/${customer.id}/edit`}
+                      className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-md font-medium transition-colors"
+                    >
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
 
-      <Pagination
-        totalItems={totalCount}
-        currentPage={currentPage}
-        pageSize={pageSize}
-      />
+      {/* Pagination and Page Size Selector */}
+      {customers.length > 0 && (
+        <div className="mt-6 bg-white p-4 rounded-lg shadow">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+            <div className="mb-4 md:mb-0">
+              <DirectPageSizeSelector pageSize={pageSize} />
+            </div>
+            <div className="text-sm font-medium text-gray-900">
+              Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}{" "}
+              to {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
+              entries
+            </div>
+          </div>
+
+          <DirectPagination
+            totalItems={totalCount}
+            currentPage={currentPage}
+            pageSize={pageSize}
+          />
+        </div>
+      )}
     </div>
   );
 }

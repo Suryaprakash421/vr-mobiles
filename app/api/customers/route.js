@@ -34,7 +34,8 @@ export async function GET(request) {
           { name: { contains: search } },
           { mobileNumber: { contains: search } },
           { address: { contains: search } },
-        ],
+          { aadhaarNumber: { contains: search } },
+        ].filter(Boolean),
       };
     }
 

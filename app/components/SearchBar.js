@@ -16,9 +16,18 @@ export default function SearchBar({ onSearch, searchBarRef }) {
   const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef(null);
 
-  // Debounce search term
+  // Use a ref to store the debounce timer
+  const debounceTimerRef = useRef(null);
+
+  // Debounce search term with improved handling
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Clear any existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set a new timer with longer delay (500ms instead of 300ms)
+    debounceTimerRef.current = setTimeout(() => {
       setDebouncedTerm(searchTerm);
 
       // If onSearch prop exists, call it directly (for client-side filtering)
@@ -40,12 +49,17 @@ export default function SearchBar({ onSearch, searchBarRef }) {
 
         // Navigate to the new URL with the current path
         const currentPath = window.location.pathname;
-        router.push(`${currentPath}?${params.toString()}`);
+        router.push(`${currentPath}?${params.toString()}`, { scroll: false });
       }
-    }, 300);
+    }, 500); // Increased to 500ms for better performance
 
-    return () => clearTimeout(timer);
-  }, [searchTerm, router, onSearch]);
+    // Clean up timer on unmount or when searchTerm changes
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchTerm, router, onSearch, searchParams]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -67,7 +81,7 @@ export default function SearchBar({ onSearch, searchBarRef }) {
 
       // Navigate to the new URL with the current path
       const currentPath = window.location.pathname;
-      router.push(`${currentPath}?${params.toString()}`);
+      router.push(`${currentPath}?${params.toString()}`, { scroll: false });
     }
   };
 
@@ -85,7 +99,7 @@ export default function SearchBar({ onSearch, searchBarRef }) {
 
       // Navigate to the new URL with the current path
       const currentPath = window.location.pathname;
-      router.push(`${currentPath}?${params.toString()}`);
+      router.push(`${currentPath}?${params.toString()}`, { scroll: false });
     }
   };
 

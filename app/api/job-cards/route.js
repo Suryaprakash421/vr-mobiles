@@ -12,9 +12,15 @@ export async function GET(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get search query from URL
+    // Get search query and pagination from URL
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+
+    // Calculate pagination offsets
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
 
     let whereClause = {};
 
@@ -26,15 +32,23 @@ export async function GET(request) {
           { customerName: { contains: search } },
           { mobileNumber: { contains: search } },
           { model: { contains: search } },
+          { complaint: { contains: search } },
         ].filter(Boolean),
       };
     }
+
+    // Get total count for pagination
+    const totalCount = await prisma.jobCard.count({
+      where: whereClause,
+    });
 
     const jobCards = await prisma.jobCard.findMany({
       where: whereClause,
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take,
       include: {
         createdBy: {
           select: {
@@ -45,7 +59,13 @@ export async function GET(request) {
       },
     });
 
-    return NextResponse.json(jobCards);
+    return NextResponse.json({
+      jobCards,
+      totalCount,
+      page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
+    });
   } catch (error) {
     console.error("Error fetching job cards:", error);
     return NextResponse.json(

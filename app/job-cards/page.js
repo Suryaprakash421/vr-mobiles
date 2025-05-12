@@ -4,7 +4,7 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import Layout from "../components/Layout";
 import JobCardList from "../components/JobCardList";
-import SearchBar from "../components/SearchBar";
+// No need to import SearchBar as it's used in JobCardList component
 
 export default async function JobCardsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
