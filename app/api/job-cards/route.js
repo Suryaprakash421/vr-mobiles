@@ -98,15 +98,31 @@ export async function POST(request) {
 
           // Update the customer's visit count
           try {
+            // Count existing job cards for this customer
+            const existingJobCount = await prisma.jobCard.count({
+              where: {
+                OR: [
+                  { customerId: existingCustomer.id },
+                  { mobileNumber: existingCustomer.mobileNumber },
+                ],
+              },
+            });
+
+            // Add 1 for the new job card being created
+            const newVisitCount = existingJobCount + 1;
+
             const updatedCustomer = await prisma.customer.update({
               where: { id: existingCustomer.id },
               data: {
-                visitCount: existingCustomer.visitCount + 1,
+                visitCount: newVisitCount,
               },
             });
             console.log(
-              "Updated customer visit count:",
-              updatedCustomer.visitCount
+              "Updated customer visit count to:",
+              updatedCustomer.visitCount,
+              "(found",
+              existingJobCount,
+              "existing job cards)"
             );
           } catch (updateError) {
             console.error("Error updating customer visit count:", updateError);
@@ -147,10 +163,15 @@ export async function POST(request) {
     try {
       // Create the job card without billNo first
       const jobCard = await prisma.jobCard.create({
-        data: jobCardData,
+        data: {
+          ...jobCardData,
+          // Make sure customerId is properly set
+          customerId: customerId,
+        },
       });
 
       console.log("Job card created:", jobCard);
+      console.log("Job card customerId:", jobCard.customerId);
 
       try {
         // Update the billNo to match the id in a separate step

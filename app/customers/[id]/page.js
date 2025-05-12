@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Layout from "../../components/Layout";
 import Link from "next/link";
 import BackButton from "../../components/BackButton";
+import CustomerDetailRefresher from "../../components/CustomerDetailRefresher";
 
 export async function generateMetadata({ params }) {
   // Safely access params
@@ -51,34 +52,49 @@ export default async function CustomerDetailPage({ params }) {
   // Try to get the customer with job cards
   let customer;
   try {
+    // First, get the customer details
     customer = await prisma.customer.findUnique({
       where: { id },
-      include: {
-        jobCards: {
-          orderBy: {
-            createdAt: "desc",
-          },
-          include: {
-            createdBy: {
-              select: {
-                name: true,
-                username: true,
-              },
+    });
+
+    if (customer) {
+      // Then, get all job cards with this customer's mobile number
+      const jobCards = await prisma.jobCard.findMany({
+        where: {
+          OR: [{ customerId: id }, { mobileNumber: customer.mobileNumber }],
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          createdBy: {
+            select: {
+              name: true,
+              username: true,
             },
           },
         },
-      },
-    });
+      });
+
+      // Add job cards to customer object
+      customer.jobCards = jobCards;
+
+      console.log(
+        `Found ${jobCards.length} job cards for customer ${id} with mobile ${customer.mobileNumber}`
+      );
+    }
   } catch (error) {
     console.error("Error fetching customer with job cards:", error);
 
     // Fallback to fetching customer without job cards
-    customer = await prisma.customer.findUnique({
-      where: { id },
-    });
+    if (!customer) {
+      customer = await prisma.customer.findUnique({
+        where: { id },
+      });
+    }
 
-    // Add empty job cards array
-    if (customer) {
+    // Add empty job cards array if needed
+    if (customer && !customer.jobCards) {
       customer.jobCards = [];
     }
   }
@@ -94,6 +110,9 @@ export default async function CustomerDetailPage({ params }) {
 
   return (
     <Layout>
+      {/* Add the refresher component */}
+      <CustomerDetailRefresher />
+
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         {/* Header with gradient background */}
         <div className="bg-gradient-to-r from-green-600 to-blue-600 p-6 text-white">
@@ -153,7 +172,7 @@ export default async function CustomerDetailPage({ params }) {
           {/* Visit count badge */}
           <div className="mt-4 bg-white bg-opacity-20 inline-block px-3 py-1 rounded-full">
             <span className="text-white font-semibold">
-              Total Visits: {customer.jobCards.length}
+              Total Visits: {customer.visitCount || customer.jobCards.length}
             </span>
           </div>
         </div>
@@ -308,7 +327,7 @@ export default async function CustomerDetailPage({ params }) {
                     Total Visits
                   </p>
                   <p className="font-semibold text-gray-900 text-2xl">
-                    {customer.jobCards.length}
+                    {customer.visitCount || customer.jobCards.length}
                   </p>
                 </div>
                 <div className="bg-green-50 p-3 rounded-md">
