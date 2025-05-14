@@ -237,7 +237,7 @@ export default function JobCardList({
             ) : (
               <tr>
                 <td
-                  colSpan="8"
+                  colSpan="9"
                   className="px-6 py-10 text-center text-gray-500"
                 >
                   No matching job cards found.

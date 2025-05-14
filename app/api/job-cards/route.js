@@ -56,6 +56,14 @@ export async function GET(request) {
             username: true,
           },
         },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            mobileNumber: true,
+            visitCount: true,
+          },
+        },
       },
     });
 
