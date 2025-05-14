@@ -6,6 +6,7 @@ import Layout from "../../components/Layout";
 import Link from "next/link";
 import BackButton from "../../components/BackButton";
 import CustomerDetailRefresher from "../../components/CustomerDetailRefresher";
+import JobCardHistoryTable from "../../components/JobCardHistoryTable";
 
 export async function generateMetadata({ params }) {
   // Safely access params
@@ -386,111 +387,9 @@ export default async function CustomerDetailPage({ params }) {
                 Job Cards History
               </h2>
 
-              {customer.jobCards.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Bill No
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Date
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Model
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Complaint
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Status
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Customer Name
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {customer.jobCards.map((jobCard) => (
-                        <tr key={jobCard.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            #{jobCard.billNo}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(jobCard.date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {jobCard.model}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                            {jobCard.complaint}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                              ${
-                                jobCard.status === "completed"
-                                  ? "bg-green-100 text-green-800"
-                                  : jobCard.status === "in-progress"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {jobCard.status === "completed"
-                                ? "Completed"
-                                : jobCard.status === "in-progress"
-                                ? "In Progress"
-                                : "Pending"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
-                            {jobCard.customerName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <Link
-                              href={`/job-cards/${jobCard.id}`}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                            >
-                              View
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-gray-500">
-                    No job cards found for this customer.
-                  </p>
-                </div>
-              )}
+              <div className="mt-4">
+                <JobCardHistoryTable jobCards={customer.jobCards} />
+              </div>
             </div>
           </div>
         </div>
