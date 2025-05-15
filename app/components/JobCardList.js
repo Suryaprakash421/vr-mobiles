@@ -8,6 +8,7 @@ import DirectPagination from "./DirectPagination";
 import LoadingOverlay from "./LoadingOverlay";
 import SimpleStatusDropdown from "./SimpleStatusDropdown";
 import DirectPageSizeSelector from "./DirectPageSizeSelector";
+import StatusFilter from "./StatusFilter";
 
 export default function JobCardList({
   jobCards,
@@ -15,7 +16,11 @@ export default function JobCardList({
   currentPage = 1,
   pageSize = 10,
   showSearch = true,
+  currentStatus = "all",
 }) {
+  // Ensure currentStatus is a string and has a default value
+  const status = currentStatus ? String(currentStatus) : "all";
+  console.log(`JobCardList received currentStatus: "${status}"`);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -74,30 +79,43 @@ export default function JobCardList({
       <div>
         {showSearch && (
           <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl shadow-sm">
-            <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
-              Find Job Cards
-            </h2>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3">
+              <h2 className="text-lg font-bold mb-3 md:mb-0 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+                Find Job Cards
+              </h2>
+              <StatusFilter currentStatus={status} />
+            </div>
             <DirectSearchBar searchBarRef={searchBarRef} />
           </div>
         )}
         <div className="text-center py-10 bg-white rounded-lg shadow">
-          <p className="text-gray-500">No job cards found.</p>
-          {searchParams?.get("search") && (
+          <p className="text-gray-500">
+            {status !== "all"
+              ? `No ${
+                  status === "completed"
+                    ? "completed"
+                    : status === "in-progress"
+                    ? "in progress"
+                    : "pending"
+                } job cards found.`
+              : "No job cards found."}
+          </p>
+          {(searchParams?.get("search") || searchParams?.get("status")) && (
             <button
               onClick={() => {
-                // Clear the search input field
+                // Clear the search and status filters
+                const params = new URLSearchParams();
+                params.set("page", "1");
+                router.push(`/job-cards?${params.toString()}`);
+
+                // Clear the search input field if available
                 if (searchBarRef.current) {
                   searchBarRef.current.clearSearch();
-                } else {
-                  // Fallback if ref is not available
-                  const params = new URLSearchParams();
-                  params.set("page", "1");
-                  router.push(`/job-cards?${params.toString()}`);
                 }
               }}
               className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
             >
-              Clear Search
+              Clear Filters
             </button>
           )}
         </div>
@@ -109,9 +127,12 @@ export default function JobCardList({
     <div>
       {showSearch && (
         <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl shadow-sm">
-          <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
-            Find Job Cards
-          </h2>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3">
+            <h2 className="text-lg font-bold mb-3 md:mb-0 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+              Find Job Cards
+            </h2>
+            <StatusFilter currentStatus={status} />
+          </div>
           <DirectSearchBar searchBarRef={searchBarRef} />
         </div>
       )}
@@ -258,6 +279,17 @@ export default function JobCardList({
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} to{" "}
             {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
             entries
+            {status !== "all" && (
+              <span className="ml-1 text-indigo-600">
+                (filtered by{" "}
+                {status === "completed"
+                  ? "completed"
+                  : status === "in-progress"
+                  ? "in progress"
+                  : "pending"}{" "}
+                status)
+              </span>
+            )}
           </div>
         </div>
 

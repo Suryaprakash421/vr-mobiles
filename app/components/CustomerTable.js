@@ -196,20 +196,42 @@ export default function CustomerTable() {
     );
   }
 
-  if (customers.length === 0) {
+  // We'll only show this message if there are no customers AND no search is active
+  if (customers.length === 0 && !searchParams.get("search")) {
     return (
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <div className="text-center py-10">
-          <p className="text-gray-500">
-            No customers found. Customers are automatically created when you add
-            job cards.
-          </p>
-          <Link
-            href="/job-cards/new"
-            className="mt-4 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md font-medium transition-colors inline-block"
-          >
-            Create Your First Job Card
-          </Link>
+      <div>
+        {/* Search Bar - Always show this */}
+        <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl shadow-sm relative">
+          <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+            Find Customers
+          </h2>
+          <DirectSearchBar searchBarRef={searchBarRef} />
+
+          {/* Subtle search loading indicator */}
+          {searching && (
+            <div className="absolute top-2 right-2">
+              <div className="animate-pulse flex space-x-1">
+                <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+                <div className="h-2 w-2 bg-indigo-600 rounded-full animation-delay-200"></div>
+                <div className="h-2 w-2 bg-purple-600 rounded-full animation-delay-500"></div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <div className="text-center py-10">
+            <p className="text-gray-500">
+              No customers found. Customers are automatically created when you
+              add job cards.
+            </p>
+            <Link
+              href="/job-cards/new"
+              className="mt-4 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md font-medium transition-colors inline-block"
+            >
+              Create Your First Job Card
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -236,28 +258,28 @@ export default function CustomerTable() {
         )}
       </div>
 
-      {/* No customers message */}
-      {customers.length === 0 && !loading && (
+      {/* No customers message - only show when search is active and no results */}
+      {customers.length === 0 && !loading && searchParams?.get("search") && (
         <div className="text-center py-10 bg-white rounded-lg shadow">
-          <p className="text-gray-500">No customers found.</p>
-          {searchParams?.get("search") && (
-            <button
-              onClick={() => {
-                // Clear the search input field
-                if (searchBarRef.current) {
-                  searchBarRef.current.clearSearch();
-                } else {
-                  // Fallback if ref is not available
-                  const params = new URLSearchParams();
-                  params.set("page", "1");
-                  router.push(`/customers?${params.toString()}`);
-                }
-              }}
-              className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
-            >
-              Clear Search
-            </button>
-          )}
+          <p className="text-gray-500">
+            No customers found matching your search criteria.
+          </p>
+          <button
+            onClick={() => {
+              // Clear the search input field
+              if (searchBarRef.current) {
+                searchBarRef.current.clearSearch();
+              } else {
+                // Fallback if ref is not available
+                const params = new URLSearchParams();
+                params.set("page", "1");
+                router.push(`/customers?${params.toString()}`);
+              }
+            }}
+            className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
+          >
+            Clear Search
+          </button>
         </div>
       )}
 

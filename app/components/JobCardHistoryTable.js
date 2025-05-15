@@ -12,14 +12,24 @@ const formatDate = (dateString) => {
 export default function JobCardHistoryTable({ jobCards }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Filter job cards by status
+  const filteredJobCards = jobCards.filter((jobCard) => {
+    if (statusFilter === "all") return true;
+    return jobCard.status === statusFilter;
+  });
 
   // Calculate total pages
-  const totalPages = Math.ceil(jobCards.length / pageSize);
+  const totalPages = Math.ceil(filteredJobCards.length / pageSize);
 
   // Get current job cards
   const indexOfLastItem = currentPage * pageSize;
   const indexOfFirstItem = indexOfLastItem - pageSize;
-  const currentJobCards = jobCards.slice(indexOfFirstItem, indexOfLastItem);
+  const currentJobCards = filteredJobCards.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   // Change page
   const goToNextPage = () => {
@@ -39,11 +49,53 @@ export default function JobCardHistoryTable({ jobCards }) {
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1); // Reset to first page when changing filter
+  };
+
   return (
     <div className="mt-8">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">
-        Job Card History
-      </h3>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+        <h3 className="text-lg font-medium text-gray-900">Job Card History</h3>
+        <div className="mt-2 md:mt-0 flex items-center">
+          <label
+            htmlFor="statusFilter"
+            className="mr-2 text-sm font-medium text-gray-900"
+          >
+            Filter by Status:
+          </label>
+          <select
+            id="statusFilter"
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm font-medium focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-indigo-700"
+            style={{ fontWeight: 500 }}
+          >
+            <option value="all" style={{ color: "#4338ca", fontWeight: 500 }}>
+              All
+            </option>
+            <option
+              value="pending"
+              style={{ color: "#d97706", fontWeight: 500 }}
+            >
+              Pending
+            </option>
+            <option
+              value="in-progress"
+              style={{ color: "#2563eb", fontWeight: 500 }}
+            >
+              In Progress
+            </option>
+            <option
+              value="completed"
+              style={{ color: "#059669", fontWeight: 500 }}
+            >
+              Completed
+            </option>
+          </select>
+        </div>
+      </div>
       <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -145,7 +197,17 @@ export default function JobCardHistoryTable({ jobCards }) {
                   colSpan="7"
                   className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
                 >
-                  No job cards found
+                  {statusFilter !== "all"
+                    ? `No ${
+                        statusFilter === "completed"
+                          ? "completed"
+                          : statusFilter === "in-progress"
+                          ? "in progress"
+                          : "pending"
+                      } job cards found. ${
+                        jobCards.length > 0 ? "Try changing the filter." : ""
+                      }`
+                    : "No job cards found"}
                 </td>
               </tr>
             )}
@@ -172,9 +234,11 @@ export default function JobCardHistoryTable({ jobCards }) {
               </div>
             </div>
             <div className="text-sm font-medium text-gray-900">
-              Showing {indexOfFirstItem + 1} to{" "}
-              {Math.min(indexOfLastItem, jobCards.length)} of {jobCards.length}{" "}
-              entries
+              Showing {filteredJobCards.length > 0 ? indexOfFirstItem + 1 : 0}{" "}
+              to {Math.min(indexOfLastItem, filteredJobCards.length)} of{" "}
+              {filteredJobCards.length} entries{" "}
+              {statusFilter !== "all" &&
+                `(filtered from ${jobCards.length} total entries)`}
             </div>
           </div>
 

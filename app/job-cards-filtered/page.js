@@ -1,12 +1,11 @@
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
+import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma";
+import prisma from "../../lib/prisma";
 import Layout from "../components/Layout";
 import JobCardList from "../components/JobCardList";
-// No need to import SearchBar as it's used in JobCardList component
 
-export default async function JobCardsPage(props) {
+export default async function JobCardsFilteredPage(props) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -14,7 +13,6 @@ export default async function JobCardsPage(props) {
   }
 
   // Get pagination, search, and status filter parameters safely
-  // Use a more direct approach to avoid Next.js warnings
   const searchParams = props.searchParams || {};
 
   // Extract parameters with fallbacks
@@ -24,19 +22,13 @@ export default async function JobCardsPage(props) {
   const status = searchParams.status || "";
 
   console.log("Status parameter:", status);
-
-  // Log all search parameters for debugging
-  console.log("Search parameters:", {
-    search,
-    page,
-    pageSize,
-    status,
-  });
+  console.log("All search parameters:", JSON.stringify(searchParams));
 
   // Calculate pagination offsets
   const skip = (page - 1) * pageSize;
   const take = pageSize;
 
+  // Create where clause for search
   let whereClause = {};
 
   // If search parameter exists, add it to the where clause
@@ -55,7 +47,7 @@ export default async function JobCardsPage(props) {
   if (status && status !== "all") {
     whereClause = {
       ...whereClause,
-      status: status, // Direct comparison works better with Prisma
+      status: status,
     };
     console.log(`Filtering by status: ${status}`);
     console.log(
@@ -94,7 +86,7 @@ export default async function JobCardsPage(props) {
       <div className="p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <h1 className="text-2xl font-extrabold text-gray-900 mb-4 md:mb-0">
-            Job Cards
+            Job Cards (Filtered)
           </h1>
         </div>
 

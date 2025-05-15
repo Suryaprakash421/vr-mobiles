@@ -147,6 +147,19 @@ export default function SideNav() {
             </Link>
 
             <Link
+              href="/job-cards-filtered"
+              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                pathname === "/job-cards-filtered"
+                  ? "bg-blue-700 text-white"
+                  : "text-blue-100 hover:bg-blue-700"
+              }`}
+              onClick={closeSidebar}
+            >
+              <FaClipboardList size={20} />
+              <span className="font-medium">Filtered Job Cards</span>
+            </Link>
+
+            <Link
               href="/customers"
               className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
                 pathname.startsWith("/customers")
