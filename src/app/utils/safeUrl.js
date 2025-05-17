@@ -41,6 +41,17 @@ export function createSafeUrl(url, base) {
  * @returns {string} - The joined URL path
  */
 export function joinUrlPaths(...segments) {
+  // During static build, ensure we return a valid path
+  if (typeof window === "undefined" && process.env.NODE_ENV === "production") {
+    // For build-time, just return a valid path string
+    const path = segments
+      .map((segment) => segment.replace(/^\/+|\/+$/g, ""))
+      .filter(Boolean)
+      .join("/");
+    return `/${path}`;
+  }
+
+  // Normal runtime behavior
   return segments
     .map((segment) => segment.replace(/^\/+|\/+$/g, ""))
     .filter(Boolean)
@@ -78,6 +89,11 @@ export function getApiBaseUrl() {
   // In browser, use window.location.origin
   if (isBrowser) {
     return window.location.origin;
+  }
+
+  // During static build, ensure we return a valid URL
+  if (process.env.NODE_ENV === "production") {
+    return "https://example.com";
   }
 
   // In server environment, use environment variable or default to a valid URL

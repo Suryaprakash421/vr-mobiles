@@ -4,9 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { joinUrlPaths } from "../utils/safeUrl";
 
-// Disable static generation for this page
-export const dynamic = "force-dynamic";
-
 export default function TestJobCardPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
