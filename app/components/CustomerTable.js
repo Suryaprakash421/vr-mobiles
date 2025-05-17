@@ -5,14 +5,13 @@ import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import LoadingOverlay from "./LoadingOverlay";
 import DirectPagination from "./DirectPagination";
-import DirectSearchBar from "./DirectSearchBar";
+import SearchField from "./SearchField";
 import DirectPageSizeSelector from "./DirectPageSizeSelector";
 
 export default function CustomerTable() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const searchBarRef = useRef();
   const isInitialLoad = useRef(true);
 
   const [customers, setCustomers] = useState([]);
@@ -222,7 +221,12 @@ export default function CustomerTable() {
         <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
           Find Customers
         </h2>
-        <DirectSearchBar searchBarRef={searchBarRef} />
+        <SearchField
+          placeholder="Search by name, mobile number, or address..."
+          initialValue={searchParams.get("search") || ""}
+          debounceTime={500}
+          className="w-full"
+        />
 
         {/* Subtle search loading indicator */}
         {searching && (
@@ -243,15 +247,10 @@ export default function CustomerTable() {
           {searchParams?.get("search") && (
             <button
               onClick={() => {
-                // Clear the search input field
-                if (searchBarRef.current) {
-                  searchBarRef.current.clearSearch();
-                } else {
-                  // Fallback if ref is not available
-                  const params = new URLSearchParams();
-                  params.set("page", "1");
-                  router.push(`/customers?${params.toString()}`);
-                }
+                // Clear the search by navigating to the page without search params
+                const params = new URLSearchParams();
+                params.set("page", "1");
+                router.push(`/customers?${params.toString()}`);
               }}
               className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
             >

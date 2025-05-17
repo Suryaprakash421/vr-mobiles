@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import DirectSearchBar from "./DirectSearchBar";
+import SearchField from "./SearchField";
 import DirectPagination from "./DirectPagination";
 import LoadingOverlay from "./LoadingOverlay";
 import SimpleStatusDropdown from "./SimpleStatusDropdown";
@@ -23,7 +23,6 @@ export default function JobCardList({
   const searchParams = useSearchParams();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const searchBarRef = useRef();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -82,7 +81,12 @@ export default function JobCardList({
             </h2>
             <div className="flex flex-col md:flex-row md:items-end space-y-4 md:space-y-0 md:space-x-4">
               <div className="flex-grow">
-                <DirectSearchBar searchBarRef={searchBarRef} />
+                <SearchField
+                  placeholder="Search by bill number, name, or phone..."
+                  initialValue={searchParams.get("search") || ""}
+                  debounceTime={500}
+                  className="w-full"
+                />
               </div>
               {showStatusFilter && (
                 <div>
@@ -97,15 +101,10 @@ export default function JobCardList({
           {searchParams?.get("search") && (
             <button
               onClick={() => {
-                // Clear the search input field
-                if (searchBarRef.current) {
-                  searchBarRef.current.clearSearch();
-                } else {
-                  // Fallback if ref is not available
-                  const params = new URLSearchParams();
-                  params.set("page", "1");
-                  router.push(`/job-cards?${params.toString()}`);
-                }
+                // Clear the search by navigating to the page without search params
+                const params = new URLSearchParams();
+                params.set("page", "1");
+                router.push(`/job-cards?${params.toString()}`);
               }}
               className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
             >
@@ -126,7 +125,12 @@ export default function JobCardList({
           </h2>
           <div className="flex flex-col md:flex-row md:items-end space-y-4 md:space-y-0 md:space-x-4">
             <div className="flex-grow">
-              <DirectSearchBar searchBarRef={searchBarRef} />
+              <SearchField
+                placeholder="Search by bill number, name, or phone..."
+                initialValue={searchParams.get("search") || ""}
+                debounceTime={500}
+                className="w-full"
+              />
             </div>
             {showStatusFilter && (
               <div>

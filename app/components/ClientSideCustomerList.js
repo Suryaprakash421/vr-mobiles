@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import SearchBar from "./SearchBar";
+import SearchField from "./SearchField";
 import Pagination from "./Pagination";
 import { FaEye, FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 
@@ -16,7 +16,6 @@ export default function ClientSideCustomerList() {
   const [error, setError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const searchBarRef = useRef();
 
   // Get pagination and search parameters
   const search = searchParams?.get("search") || "";
@@ -148,7 +147,12 @@ export default function ClientSideCustomerList() {
           <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
             Find Customers
           </h2>
-          <SearchBar searchBarRef={searchBarRef} />
+          <SearchField
+            placeholder="Search by name, mobile number, or address..."
+            initialValue={search}
+            debounceTime={500}
+            className="w-full"
+          />
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-6">
@@ -157,15 +161,10 @@ export default function ClientSideCustomerList() {
             {search && (
               <button
                 onClick={() => {
-                  // Clear the search input field
-                  if (searchBarRef.current) {
-                    searchBarRef.current.clearSearch();
-                  } else {
-                    // Fallback if ref is not available
-                    const params = new URLSearchParams();
-                    params.set("page", "1");
-                    router.push(`/customers?${params.toString()}`);
-                  }
+                  // Clear the search by navigating to the page without search params
+                  const params = new URLSearchParams();
+                  params.set("page", "1");
+                  router.push(`/customers?${params.toString()}`);
                 }}
                 className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
               >
@@ -185,7 +184,12 @@ export default function ClientSideCustomerList() {
         <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
           Find Customers
         </h2>
-        <SearchBar searchBarRef={searchBarRef} />
+        <SearchField
+          placeholder="Search by name, mobile number, or address..."
+          initialValue={search}
+          debounceTime={500}
+          className="w-full"
+        />
       </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
