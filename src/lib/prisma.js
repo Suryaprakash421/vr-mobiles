@@ -1,51 +1,34 @@
-// Simplified and more reliable Prisma client initialization
-// that works better in serverless environments like Vercel
+// Improved Prisma client initialization for Next.js 15 and Vercel serverless environment
 
-// Use dynamic import to ensure Prisma is only loaded when needed
-// This helps prevent issues with Vercel's serverless environment
+import { PrismaClient } from "@prisma/client";
+
+// Global variable to store the Prisma client instance
 let prismaClient;
 
-// This function will be called to get the Prisma client
-// It uses a lazy-loading pattern that works better in serverless environments
-async function getPrismaClient() {
+// Function to get or create the Prisma client
+function getPrismaClient() {
+  // If we already have a client instance, return it
   if (prismaClient) {
     return prismaClient;
   }
 
-  try {
-    // Dynamically import PrismaClient only when needed
-    const { PrismaClient } = await import("@prisma/client");
+  // Create a new PrismaClient instance
+  prismaClient = new PrismaClient({
+    log: ["error"],
+    errorFormat: "minimal",
+  });
 
-    // Create a new instance with minimal logging
-    const client = new PrismaClient({
-      log: ["error"],
-      errorFormat: "minimal",
-    });
-
-    // Cache the client for future use
-    prismaClient = client;
-    return client;
-  } catch (error) {
-    console.error("Failed to initialize Prisma client:", error);
-    throw new Error(`Prisma client initialization failed: ${error.message}`);
+  // Add shutdown hooks if needed
+  if (process.env.NODE_ENV !== "production") {
+    // Add any development-specific behavior here
   }
+
+  return prismaClient;
 }
 
-// Create a proxy that will lazily initialize the Prisma client
-// This ensures we don't try to create the client until it's actually used
-const prisma = new Proxy(
-  {},
-  {
-    get: function (target, prop) {
-      // Return a function that initializes Prisma when called
-      return async function (...args) {
-        const client = await getPrismaClient();
-        return client[prop](...args);
-      };
-    },
-  }
-);
+// Get the client
+const prisma = getPrismaClient();
 
-// Export the proxy as both default and named export
+// Export the client as both default and named export
 export { prisma };
 export default prisma;

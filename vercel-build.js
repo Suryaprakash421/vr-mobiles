@@ -50,6 +50,10 @@ try {
   console.log("Generating Prisma client...");
   execSync("npx prisma generate", { stdio: "inherit" });
 
+  // Pre-initialize Prisma client to avoid initialization issues
+  console.log("Pre-initializing Prisma client...");
+  execSync("node prisma-init.js", { stdio: "inherit" });
+
   // Run the Next.js build command with the environment variables
   console.log("Building Next.js application...");
   execSync("npx next build", {
