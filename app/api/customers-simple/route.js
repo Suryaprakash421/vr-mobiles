@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma";
+import prisma from "../../../lib/prisma";
 
 // GET /api/customers-simple - Get all customers with minimal processing
 export async function GET(request) {

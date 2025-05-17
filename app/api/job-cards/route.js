@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
+
+// Set cache control headers for GET requests
+export const revalidate = 60; // Revalidate every 60 seconds
 
 // GET all job cards
 export async function GET(request) {
@@ -17,10 +20,14 @@ export async function GET(request) {
     const search = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const limit = parseInt(searchParams.get("limit") || pageSize);
 
-    // Calculate pagination offsets
-    const skip = (page - 1) * pageSize;
-    const take = pageSize;
+    // Check if we should return all records (for client-side filtering)
+    const returnAll = limit > pageSize;
+
+    // Calculate pagination offsets (only if not returning all)
+    const skip = returnAll ? 0 : (page - 1) * pageSize;
+    const take = returnAll ? limit : pageSize;
 
     let whereClause = {};
 
@@ -42,38 +49,100 @@ export async function GET(request) {
       where: whereClause,
     });
 
-    const jobCards = await prisma.jobCard.findMany({
-      where: whereClause,
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take,
-      include: {
-        createdBy: {
-          select: {
-            name: true,
-            username: true,
+    // Optimize the query based on whether we need all fields
+    try {
+      const jobCards = await prisma.jobCard.findMany({
+        where: whereClause,
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take,
+        include: {
+          createdBy: {
+            select: {
+              name: true,
+              username: true,
+            },
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              mobileNumber: true,
+              visitCount: true,
+            },
           },
         },
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            mobileNumber: true,
-            visitCount: true,
-          },
-        },
-      },
-    });
+      });
 
-    return NextResponse.json({
-      jobCards,
-      totalCount,
-      page,
-      pageSize,
-      totalPages: Math.ceil(totalCount / pageSize),
-    });
+      // Process job cards to handle any null createdBy relations
+      const processedJobCards = jobCards.map((card) => {
+        if (!card.createdBy) {
+          // If createdBy is null, provide a default value
+          return {
+            ...card,
+            createdBy: {
+              name: "Unknown User",
+              username: "unknown",
+            },
+          };
+        }
+        return card;
+      });
+
+      // Set cache headers
+      const response = NextResponse.json({
+        jobCards: processedJobCards,
+        totalCount,
+        page: returnAll ? 1 : page,
+        pageSize: returnAll ? totalCount : pageSize,
+        totalPages: returnAll ? 1 : Math.ceil(totalCount / pageSize),
+      });
+
+      // Add cache control headers
+      response.headers.set(
+        "Cache-Control",
+        "public, s-maxage=60, stale-while-revalidate=300"
+      );
+
+      return response;
+    } catch (findManyError) {
+      console.error("Error in findMany query:", findManyError);
+
+      // Try a simpler query without the include
+      try {
+        const simpleJobCards = await prisma.jobCard.findMany({
+          where: whereClause,
+          orderBy: {
+            createdAt: "desc",
+          },
+          skip,
+          take,
+          // No include to avoid relation issues
+        });
+
+        // Return the simplified job cards
+        const fallbackResponse = NextResponse.json({
+          jobCards: simpleJobCards,
+          totalCount,
+          page: returnAll ? 1 : page,
+          pageSize: returnAll ? totalCount : pageSize,
+          totalPages: returnAll ? 1 : Math.ceil(totalCount / pageSize),
+          warning: "Simplified data returned due to relation issues",
+        });
+
+        fallbackResponse.headers.set(
+          "Cache-Control",
+          "public, s-maxage=60, stale-while-revalidate=300"
+        );
+
+        return fallbackResponse;
+      } catch (fallbackError) {
+        console.error("Error in fallback query:", fallbackError);
+        throw fallbackError; // Let the outer catch handle it
+      }
+    }
   } catch (error) {
     console.error("Error fetching job cards:", error);
     return NextResponse.json(
@@ -93,14 +162,8 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("Session user:", session.user);
-
+    // Parse request data
     const data = await request.json();
-    console.log("Received data:", data);
-    console.log("Data type:", typeof data);
-    console.log("Data keys:", Object.keys(data));
-    console.log("Status value:", data.status);
-    console.log("Status type:", typeof data.status);
 
     // Get the user ID from the session
     const userId = parseInt(session.user.id);
@@ -108,6 +171,24 @@ export async function POST(request) {
     if (isNaN(userId)) {
       console.error("Invalid user ID:", session.user.id);
       return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+    }
+
+    // Verify that the user exists in the database
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        console.error("User not found in database:", userId);
+        return NextResponse.json({ error: "User not found" }, { status: 400 });
+      }
+    } catch (userError) {
+      console.error("Error verifying user:", userError);
+      return NextResponse.json(
+        { error: "Failed to verify user", details: userError.message },
+        { status: 500 }
+      );
     }
 
     // Check if a customer with this mobile number exists
@@ -122,8 +203,6 @@ export async function POST(request) {
 
         if (existingCustomer) {
           customerId = existingCustomer.id;
-          console.log("Found existing customer:", existingCustomer.id);
-
           // Update the customer's visit count
           try {
             // Count existing job cards for this customer
@@ -139,19 +218,12 @@ export async function POST(request) {
             // Add 1 for the new job card being created
             const newVisitCount = existingJobCount + 1;
 
-            const updatedCustomer = await prisma.customer.update({
+            await prisma.customer.update({
               where: { id: existingCustomer.id },
               data: {
                 visitCount: newVisitCount,
               },
             });
-            console.log(
-              "Updated customer visit count to:",
-              updatedCustomer.visitCount,
-              "(found",
-              existingJobCount,
-              "existing job cards)"
-            );
           } catch (updateError) {
             console.error("Error updating customer visit count:", updateError);
             // Continue even if visit count update fails
@@ -186,8 +258,6 @@ export async function POST(request) {
       customerId: customerId, // Link to customer if exists
     };
 
-    console.log("Creating job card with data:", jobCardData);
-
     try {
       // Create the job card without billNo first
       const jobCard = await prisma.jobCard.create({
@@ -198,9 +268,6 @@ export async function POST(request) {
         },
       });
 
-      console.log("Job card created:", jobCard);
-      console.log("Job card customerId:", jobCard.customerId);
-
       try {
         // Update the billNo to match the id in a separate step
         const updatedJobCard = await prisma.jobCard.update({
@@ -208,7 +275,6 @@ export async function POST(request) {
           data: { billNo: jobCard.id },
         });
 
-        console.log("Updated job card with billNo:", updatedJobCard);
         return NextResponse.json(updatedJobCard, { status: 201 });
       } catch (updateError) {
         console.error("Error updating job card with billNo:", updateError);

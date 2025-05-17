@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
-    "db:seed": "node prisma/seed.js"
+    "db:seed": "node prisma/seed.js",
+    "vercel-build": "prisma generate && prisma db push && next build",
+    "analyze": "ANALYZE=true next build",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:reset": "prisma migrate reset",
+    "migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.2",
@@ -25,6 +30,9 @@
     "react-hook-form": "^7.56.3",
     "react-icons": "^5.5.0",
     "zod": "^3.24.4"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.33.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

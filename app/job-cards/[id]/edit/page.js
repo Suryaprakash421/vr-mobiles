@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../api/auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma";
+import prisma from "../../../../lib/prisma";
 import Layout from "../../../components/Layout";
 import JobCardForm from "../../../components/JobCardForm";
 import Link from "next/link";

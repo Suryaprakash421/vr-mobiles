@@ -29,19 +29,64 @@ export default function LoginPage() {
     }
 
     try {
-      console.log("Attempting login with:", { username });
+      console.log(
+        "Attempting login with username:",
+        username,
+        "and password length:",
+        password.length
+      );
 
+      // First try our debug login endpoint
+      try {
+        const debugResponse = await fetch("/api/debug/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const debugResult = await debugResponse.json();
+        console.log("Debug login result:", debugResult);
+
+        if (debugResult.success) {
+          console.log("Debug login successful, proceeding with NextAuth login");
+        } else {
+          console.error("Debug login failed:", debugResult.error);
+        }
+      } catch (debugError) {
+        console.error("Error with debug login:", debugError);
+      }
+
+      // Add a small delay to ensure the server is ready
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Now try the actual NextAuth login
       const result = await signIn("credentials", {
         username,
         password,
         redirect: false,
+        callbackUrl: "/",
       });
 
-      console.log("Login result:", result);
+      console.log("NextAuth login result:", result);
 
-      if (result.error) {
+      if (result?.error) {
         console.error("Login error:", result.error);
-        setError("Invalid username or password. Please try admin/admin123");
+
+        let errorMessage =
+          "Invalid username or password. Please try admin/admin123";
+
+        // Provide more specific error messages based on the error
+        if (result.error === "CredentialsSignin") {
+          errorMessage =
+            "Invalid username or password. Please try admin/admin123";
+        } else if (result.error.includes("fetch")) {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
+        }
+
+        setError(errorMessage);
         setIsLoading(false);
 
         // Hide loading overlay

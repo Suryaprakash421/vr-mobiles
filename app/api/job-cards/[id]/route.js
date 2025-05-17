@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "../../../../lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
@@ -18,26 +18,60 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const jobCard = await prisma.jobCard.findUnique({
-      where: { id },
-      include: {
-        createdBy: {
-          select: {
-            name: true,
-            username: true,
+    try {
+      const jobCard = await prisma.jobCard.findUnique({
+        where: { id },
+        include: {
+          createdBy: {
+            select: {
+              name: true,
+              username: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!jobCard) {
-      return NextResponse.json(
-        { error: "Job card not found" },
-        { status: 404 }
-      );
-    }
+      if (!jobCard) {
+        return NextResponse.json(
+          { error: "Job card not found" },
+          { status: 404 }
+        );
+      }
 
-    return NextResponse.json(jobCard);
+      // Handle null createdBy relation
+      if (!jobCard.createdBy) {
+        jobCard.createdBy = {
+          name: "Unknown User",
+          username: "unknown"
+        };
+      }
+
+      return NextResponse.json(jobCard);
+    } catch (findError) {
+      console.error("Error in findUnique with include:", findError);
+
+      // Fallback to a simpler query without the include
+      const simpleJobCard = await prisma.jobCard.findUnique({
+        where: { id },
+      });
+
+      if (!simpleJobCard) {
+        return NextResponse.json(
+          { error: "Job card not found" },
+          { status: 404 }
+        );
+      }
+
+      // Add a default createdBy
+      simpleJobCard.createdBy = {
+        name: "Unknown User",
+        username: "unknown"
+      };
+
+      return NextResponse.json({
+        ...simpleJobCard,
+        warning: "Simplified data returned due to relation issues"
+      });
   } catch (error) {
     console.error("Error fetching job card:", error);
     return NextResponse.json(

@@ -1,37 +1,44 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
+import prisma from "../../../../lib/prisma";
 import { compare } from "bcrypt";
 
 export const authOptions = {
+  debug: process.env.NEXTAUTH_DEBUG === "true",
   providers: [
     CredentialsProvider({
+      id: "credentials",
       name: "Credentials",
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          return null;
-        }
-
         try {
-          const user = await prisma.user.findUnique({
-            where: {
-              username: credentials.username,
-            },
-          });
-
-          if (!user) {
-            console.log("User not found");
+          // Basic validation
+          if (!credentials?.username || !credentials?.password) {
+            console.log("Missing username or password");
             return null;
           }
 
-          // For debugging
-          console.log("Found user:", user.username);
+          console.log("Looking for user with username:", credentials.username);
 
-          // In a real application, you would use bcrypt to compare passwords
+          // Find the user - use a direct query to avoid any Prisma issues
+          const users = await prisma.$queryRaw`
+            SELECT * FROM User WHERE username = ${credentials.username} LIMIT 1
+          `;
+
+          const user = users.length > 0 ? users[0] : null;
+
+          if (!user) {
+            console.log("User not found for username:", credentials.username);
+            return null;
+          }
+
+          console.log("Found user:", user.username, "with ID:", user.id);
+
+          // Compare passwords
+          console.log("Comparing passwords...");
           const isPasswordValid = await compare(
             credentials.password,
             user.password
@@ -39,9 +46,13 @@ export const authOptions = {
           console.log("Password valid:", isPasswordValid);
 
           if (!isPasswordValid) {
+            console.log("Password is invalid");
             return null;
           }
 
+          console.log("Authentication successful, returning user data");
+
+          // Return user data
           return {
             id: user.id.toString(),
             name: user.name,

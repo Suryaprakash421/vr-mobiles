@@ -1,39 +1,66 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../api/auth/[...nextauth]/route";
-import prisma from "../../lib/prisma";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import Layout from "../components/Layout";
 import ClientFilteredJobCardList from "../components/ClientFilteredJobCardList";
-// No need to import SearchBar as it's used in the component
+import LoadingOverlay from "../components/LoadingOverlay";
 
-export default async function JobCardsPage(props) {
-  const session = await getServerSession(authOptions);
+export default function JobCardsPage() {
+  const { status } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  if (!session) {
-    redirect("/login");
-  }
+  const [jobCards, setJobCards] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Get search parameter for initial state
-  const searchParams = props.searchParams || {};
-  const initialSearch = searchParams.search || "";
-  const initialPage = parseInt(searchParams.page || "1");
-  const initialPageSize = parseInt(searchParams.pageSize || "5");
-  const initialStatus = searchParams.status || "all";
+  const initialSearch = searchParams.get("search") || "";
+  const initialPage = parseInt(searchParams.get("page") || "1");
+  const initialPageSize = parseInt(searchParams.get("pageSize") || "5");
+  const initialStatus = searchParams.get("status") || "all";
 
-  // Get all job cards (no pagination or filtering)
-  const jobCards = await prisma.jobCard.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      createdBy: {
-        select: {
-          name: true,
-          username: true,
-        },
-      },
-    },
-  });
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
+
+    if (status === "authenticated") {
+      // Fetch job cards
+      const fetchJobCards = async () => {
+        try {
+          const response = await fetch("/api/job-cards?limit=1000");
+          if (response.ok) {
+            const data = await response.json();
+            setJobCards(data.jobCards || []);
+          }
+        } catch (error) {
+          console.error("Error fetching job cards:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchJobCards();
+    }
+  }, [status, router]);
+
+  if (status === "loading" || loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return null; // Will redirect in the useEffect
+  }
 
   return (
     <Layout>
