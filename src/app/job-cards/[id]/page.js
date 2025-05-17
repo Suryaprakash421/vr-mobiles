@@ -10,7 +10,7 @@ import JobCardNavigation from "../../components/JobCardNavigation";
 
 export async function generateMetadata({ params }) {
   // Safely access params
-  const { id: idParam } = params;
+  const idParam = params?.id;
   const id = parseInt(idParam);
 
   if (isNaN(id)) {
@@ -42,8 +42,8 @@ export default async function JobCardDetailPage({ params }) {
     redirect("/login");
   }
 
-  // Safely access params
-  const { id: idParam } = params;
+  // Safely access params - make sure to await params
+  const idParam = params?.id;
   const id = parseInt(idParam);
 
   if (isNaN(id)) {

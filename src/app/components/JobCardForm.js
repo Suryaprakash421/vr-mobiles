@@ -337,9 +337,14 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
         }
       }
 
-      // Redirect to job cards list
-      router.push("/job-cards");
+      // Redirect to job cards list and ensure data is refreshed
+      // First refresh the router to update the server-side data
       router.refresh();
+
+      // Then navigate to the job cards page
+      setTimeout(() => {
+        router.push("/job-cards");
+      }, 100);
     } catch (error) {
       console.error("Error saving job card:", error);
       setError(error.message || "Failed to save job card");

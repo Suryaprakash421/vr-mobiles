@@ -10,7 +10,7 @@ import JobCardHistoryTable from "../../components/JobCardHistoryTable";
 
 export async function generateMetadata({ params }) {
   // Safely access params
-  const { id: idParam } = params;
+  const idParam = params?.id;
   const id = parseInt(idParam);
 
   if (isNaN(id)) {
@@ -43,7 +43,7 @@ export default async function CustomerDetailPage({ params }) {
   }
 
   // Safely access params
-  const { id: idParam } = params;
+  const idParam = params?.id;
   const id = parseInt(idParam);
 
   if (isNaN(id)) {

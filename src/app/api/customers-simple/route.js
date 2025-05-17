@@ -36,16 +36,15 @@ export async function GET(request) {
     let customers = [];
 
     try {
-      // Check if the Customer model exists in the database
+      // For MySQL, we need to use a different query to check if the table exists
       const tableExists = await prisma.$queryRaw`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables
-          WHERE table_schema = 'public'
-          AND table_name = 'Customer'
-        );
+        SELECT COUNT(*) as count
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+        AND table_name = 'Customer';
       `;
 
-      const exists = tableExists[0]?.exists || false;
+      const exists = tableExists[0]?.count > 0;
 
       if (exists) {
         // Get customers with minimal processing

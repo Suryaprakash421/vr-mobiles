@@ -25,7 +25,12 @@ export default function JobCardsPageClient() {
       // Fetch job cards
       const fetchJobCards = async () => {
         try {
-          const response = await fetch("/api/job-cards?limit=1000");
+          setLoading(true);
+          // Add a cache-busting parameter to ensure we get fresh data
+          const timestamp = new Date().getTime();
+          const response = await fetch(
+            `/api/job-cards?limit=1000&_=${timestamp}`
+          );
           if (response.ok) {
             const data = await response.json();
             setJobCards(data.jobCards || []);
@@ -40,6 +45,34 @@ export default function JobCardsPageClient() {
       fetchJobCards();
     }
   }, [status, router]);
+
+  // Add an effect to refresh the data when the component is focused
+  useEffect(() => {
+    const handleFocus = () => {
+      if (status === "authenticated") {
+        // Refresh data when the window regains focus
+        const fetchJobCards = async () => {
+          try {
+            const timestamp = new Date().getTime();
+            const response = await fetch(
+              `/api/job-cards?limit=1000&_=${timestamp}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              setJobCards(data.jobCards || []);
+            }
+          } catch (error) {
+            console.error("Error refreshing job cards:", error);
+          }
+        };
+
+        fetchJobCards();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [status]);
 
   if (status === "loading" || loading) {
     return (
