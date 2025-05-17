@@ -107,14 +107,15 @@ export default function DirectSearchBar({ searchBarRef, onSearch }) {
     performSearch(searchTerm);
   };
 
-  const clearSearch = () => {
+  // Use useCallback for clearSearch to avoid recreating the function on every render
+  const clearSearch = useCallback(() => {
     // Clear the search term in the input field
     setSearchTerm("");
     setDebouncedSearchTerm("");
 
     // Perform search with empty string to clear the search
     performSearch("");
-  };
+  }, [performSearch]);
 
   // Expose the clearSearch method via ref
   React.useImperativeHandle(
@@ -122,7 +123,7 @@ export default function DirectSearchBar({ searchBarRef, onSearch }) {
     () => ({
       clearSearch,
     }),
-    []
+    [clearSearch]
   );
 
   // Focus the input when the component mounts

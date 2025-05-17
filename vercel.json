@@ -1,11 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
   "buildCommand": "npm run vercel-build",
   "installCommand": "npm install",
   "framework": "nextjs",
@@ -15,5 +9,11 @@
       "path": "/api/cron-job",
       "schedule": "0 0 * * *"
     }
-  ]
+  ],
+  "env": {
+    "NEXT_DISABLE_STATIC_GENERATION": "true",
+    "NEXT_STATIC_GENERATION_TIMEOUT": "0",
+    "NEXT_PUBLIC_API_BASE_URL": "https://${VERCEL_URL}",
+    "NEXTAUTH_URL": "https://${VERCEL_URL}"
+  }
 }

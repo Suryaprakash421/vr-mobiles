@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { debounce } from "lodash";
 
 export default function SearchField({
@@ -11,11 +11,12 @@ export default function SearchField({
   onSearch,
   initialValue = "",
   className = "",
+  searchParamsData,
 }) {
   const [searchTerm, setSearchTerm] = useState(initialValue);
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParams = searchParamsData;
   const searchInputRef = useRef(null);
 
   // Create a debounced search function
@@ -26,13 +27,13 @@ export default function SearchField({
       } else {
         // Default behavior: update URL with search parameter
         const params = new URLSearchParams(searchParams.toString());
-        
+
         if (value) {
           params.set("search", value);
         } else {
           params.delete("search");
         }
-        
+
         // Preserve other parameters like page and pageSize
         const newUrl = `${pathname}?${params.toString()}`;
         router.push(newUrl);

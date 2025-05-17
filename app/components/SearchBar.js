@@ -11,9 +11,7 @@ export default function SearchBar({ onSearch, searchBarRef }) {
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
-  const [debouncedTerm, setDebouncedTerm] = useState(searchTerm);
   const [isFocused, setIsFocused] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef(null);
 
   // Use a ref to store the debounce timer
@@ -28,8 +26,6 @@ export default function SearchBar({ onSearch, searchBarRef }) {
 
     // Set a new timer with longer delay (500ms instead of 300ms)
     debounceTimerRef.current = setTimeout(() => {
-      setDebouncedTerm(searchTerm);
-
       // If onSearch prop exists, call it directly (for client-side filtering)
       if (onSearch) {
         onSearch(searchTerm);
@@ -85,7 +81,8 @@ export default function SearchBar({ onSearch, searchBarRef }) {
     }
   };
 
-  const clearSearch = () => {
+  // Use useCallback for clearSearch to avoid recreating the function on every render
+  const clearSearch = useCallback(() => {
     setSearchTerm("");
     if (onSearch) {
       onSearch("");
@@ -98,10 +95,10 @@ export default function SearchBar({ onSearch, searchBarRef }) {
       params.set("page", "1");
 
       // Navigate to the new URL with the current path
-      const currentPath = window.location.pathname;
+      const currentPath = pathname;
       router.push(`${currentPath}?${params.toString()}`, { scroll: false });
     }
-  };
+  }, [onSearch, router, searchParams, pathname]);
 
   // Expose the clearSearch method via ref
   React.useImperativeHandle(
@@ -109,7 +106,7 @@ export default function SearchBar({ onSearch, searchBarRef }) {
     () => ({
       clearSearch,
     }),
-    []
+    [clearSearch]
   );
 
   // Focus the input when the component mounts

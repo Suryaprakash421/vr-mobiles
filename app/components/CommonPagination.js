@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 export default function CommonPagination({
@@ -10,10 +10,11 @@ export default function CommonPagination({
   pageSize = 10,
   useClientSideNavigation = true,
   onPageChange = null,
+  searchParamsData,
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParams = searchParamsData;
   const [pageCount, setPageCount] = useState(Math.ceil(totalItems / pageSize));
   const [isNavigating, setIsNavigating] = useState(false);
 

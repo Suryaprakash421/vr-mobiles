@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import SearchField from "./SearchField";
 import SimplePagination from "./SimplePagination";
 import LoadingOverlay from "./LoadingOverlay";
@@ -16,45 +16,53 @@ export default function ClientFilteredJobCardList({
   initialStatus = "all",
   initialPage = 1,
   initialPageSize = 10,
+  searchParamsData,
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  
+  const searchParams = searchParamsData;
+
   // State for client-side filtering and pagination
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams?.get("search") || ""
+  );
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
   // Filter job cards by status and search term
   const filteredJobCards = useMemo(() => {
-    console.log(`Filtering with status: ${statusFilter}, search: ${searchTerm}`);
-    
+    console.log(
+      `Filtering with status: ${statusFilter}, search: ${searchTerm}`
+    );
+
     return jobCards.filter((jobCard) => {
       // Filter by status
-      const statusMatch = statusFilter === "all" || jobCard.status === statusFilter;
-      
+      const statusMatch =
+        statusFilter === "all" || jobCard.status === statusFilter;
+
       // Filter by search term
       let searchMatch = true;
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        searchMatch = 
+        searchMatch =
           (jobCard.billNo && jobCard.billNo.toString().includes(searchTerm)) ||
-          (jobCard.customerName && jobCard.customerName.toLowerCase().includes(searchLower)) ||
-          (jobCard.mobileNumber && jobCard.mobileNumber.toLowerCase().includes(searchLower)) ||
+          (jobCard.customerName &&
+            jobCard.customerName.toLowerCase().includes(searchLower)) ||
+          (jobCard.mobileNumber &&
+            jobCard.mobileNumber.toLowerCase().includes(searchLower)) ||
           (jobCard.model && jobCard.model.toLowerCase().includes(searchLower));
       }
-      
+
       return statusMatch && searchMatch;
     });
   }, [jobCards, statusFilter, searchTerm]);
-  
+
   // Calculate total count after filtering
   const filteredTotalCount = filteredJobCards.length;
-  
+
   // Get current page of filtered job cards
   const paginatedJobCards = useMemo(() => {
     const indexOfLastItem = currentPage * pageSize;
@@ -125,13 +133,13 @@ export default function ClientFilteredJobCardList({
     setPageSize(parseInt(newSize));
     setCurrentPage(1); // Reset to first page when changing page size
   };
-  
+
   // Handle search change
   const handleSearchChange = (newSearch) => {
     console.log(`Search changed to: ${newSearch}`);
     setSearchTerm(newSearch);
     setCurrentPage(1); // Reset to first page when changing search
-    
+
     // Update URL for search term (optional)
     const params = new URLSearchParams(searchParams.toString());
     if (newSearch) {
@@ -352,7 +360,10 @@ export default function ClientFilteredJobCardList({
         <div className="flex flex-col md:flex-row justify-between items-center mb-4">
           <div className="mb-4 md:mb-0">
             <div className="flex items-center space-x-2">
-              <label htmlFor="pageSize" className="text-sm font-medium text-gray-900">
+              <label
+                htmlFor="pageSize"
+                className="text-sm font-medium text-gray-900"
+              >
                 Show
               </label>
               <select
@@ -371,11 +382,16 @@ export default function ClientFilteredJobCardList({
             </div>
           </div>
           <div className="text-sm font-medium text-gray-900">
-            Showing {filteredTotalCount > 0 ? Math.min((currentPage - 1) * pageSize + 1, filteredTotalCount) : 0} to{" "}
-            {Math.min(currentPage * pageSize, filteredTotalCount)} of {filteredTotalCount} entries
-            {statusFilter !== "all" && filteredTotalCount !== jobCards.length && (
-              <span> (filtered from {jobCards.length} total entries)</span>
-            )}
+            Showing{" "}
+            {filteredTotalCount > 0
+              ? Math.min((currentPage - 1) * pageSize + 1, filteredTotalCount)
+              : 0}{" "}
+            to {Math.min(currentPage * pageSize, filteredTotalCount)} of{" "}
+            {filteredTotalCount} entries
+            {statusFilter !== "all" &&
+              filteredTotalCount !== jobCards.length && (
+                <span> (filtered from {jobCards.length} total entries)</span>
+              )}
           </div>
         </div>
 

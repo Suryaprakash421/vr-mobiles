@@ -42,7 +42,7 @@ export async function GET(request, { params }) {
       if (!jobCard.createdBy) {
         jobCard.createdBy = {
           name: "Unknown User",
-          username: "unknown"
+          username: "unknown",
         };
       }
 
@@ -65,13 +65,14 @@ export async function GET(request, { params }) {
       // Add a default createdBy
       simpleJobCard.createdBy = {
         name: "Unknown User",
-        username: "unknown"
+        username: "unknown",
       };
 
       return NextResponse.json({
         ...simpleJobCard,
-        warning: "Simplified data returned due to relation issues"
+        warning: "Simplified data returned due to relation issues",
       });
+    }
   } catch (error) {
     console.error("Error fetching job card:", error);
     return NextResponse.json(

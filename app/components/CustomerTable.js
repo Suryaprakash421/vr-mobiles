@@ -2,16 +2,16 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import LoadingOverlay from "./LoadingOverlay";
-import CommonPagination from "./CommonPagination";
-import SearchField from "./SearchField";
-import DirectPageSizeSelector from "./DirectPageSizeSelector";
+import { useRouter, usePathname } from "next/navigation";
+import CommonPaginationWithParams from "./CommonPaginationWithParams";
+import SearchFieldWithParams from "./SearchFieldWithParams";
+import DirectPageSizeSelectorWithParams from "./DirectPageSizeSelectorWithParams";
+import { createApiUrl } from "../utils/safeUrl";
 
-export default function CustomerTable() {
+export default function CustomerTable({ searchParamsData }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParams = searchParamsData;
   const isInitialLoad = useRef(true);
 
   const [customers, setCustomers] = useState([]);
@@ -19,19 +19,12 @@ export default function CustomerTable() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
 
-  // Get search and pagination parameters from URL
-  // Use window.location.search to ensure we get the most current URL parameters
-  const urlParams =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search)
-      : new URLSearchParams(searchParams.toString());
-
-  const search = urlParams.get("search") || "";
-  const currentPage = parseInt(urlParams.get("page") || "1");
-  const pageSize = parseInt(urlParams.get("pageSize") || "5");
+  // Get pagination parameters from URL
+  // Use searchParams directly to avoid issues with server-side rendering
+  const currentPage = parseInt(searchParams.get("page") || "1");
+  const pageSize = parseInt(searchParams.get("pageSize") || "5");
 
   // Pagination state
-  const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
   // Extract the current URL parameters we need to track
@@ -55,28 +48,25 @@ export default function CustomerTable() {
           setLoading(true);
         }
 
-        // Get the current URL parameters directly from window.location
-        // This ensures we always have the most up-to-date URL parameters
-        const currentUrlParams =
-          typeof window !== "undefined"
-            ? new URLSearchParams(window.location.search)
-            : new URLSearchParams(searchParams.toString());
+        // Get the current URL parameters from searchParams
+        const page = searchParams.get("page") || "1";
+        const size = searchParams.get("pageSize") || "5";
+        const searchTerm = searchParams.get("search") || "";
 
-        const page = currentUrlParams.get("page") || "1";
-        const size = currentUrlParams.get("pageSize") || "5";
-        const searchTerm = currentUrlParams.get("search") || "";
+        // Build query parameters object
+        const queryParams = {
+          page,
+          pageSize: size,
+        };
 
-        // Build the query string with current parameters
-        const queryParams = new URLSearchParams();
-        queryParams.set("page", page);
-        queryParams.set("pageSize", size);
         if (searchTerm) {
-          queryParams.set("search", searchTerm);
+          queryParams.search = searchTerm;
         }
 
-        const response = await fetch(
-          `/api/customers?${queryParams.toString()}`
-        );
+        // Create a safe API URL that works in both client and server environments
+        const apiUrl = createApiUrl("/api/customers", queryParams);
+
+        const response = await fetch(apiUrl);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch customers: ${response.status}`);
@@ -85,7 +75,6 @@ export default function CustomerTable() {
         const data = await response.json();
         setCustomers(data.customers || []);
         setTotalCount(data.totalCount || 0);
-        setTotalPages(Math.ceil((data.totalCount || 0) / parseInt(size)));
 
         // Update the last URL parameters
         lastUrlParamsRef.current = {
@@ -107,15 +96,10 @@ export default function CustomerTable() {
 
   // Effect for initial load and URL parameter changes
   useEffect(() => {
-    // Get parameters directly from window.location for the most up-to-date values
-    const currentUrlParams =
-      typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search)
-        : new URLSearchParams(searchParams.toString());
-
-    const currentPage = currentUrlParams.get("page");
-    const currentPageSize = currentUrlParams.get("pageSize");
-    const currentSearch = currentUrlParams.get("search");
+    // Get parameters from searchParams
+    const currentPage = searchParams.get("page");
+    const currentPageSize = searchParams.get("pageSize");
+    const currentSearch = searchParams.get("search");
 
     // Check if any relevant URL parameters have changed
     const paramsChanged =
@@ -134,24 +118,8 @@ export default function CustomerTable() {
     }
   }, [fetchCustomers, searchParams]);
 
-  // We don't need this function anymore as the Pagination component
-  // will handle page changes through URL parameters
-  // Keeping it as a no-op for any existing references
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handlePageSizeChange = (e) => {
-    const newSize = parseInt(e.target.value);
-
-    // Update URL parameters
-    const params = new URLSearchParams(searchParams);
-    params.set("pageSize", newSize.toString());
-    params.set("page", "1"); // Reset to first page when changing page size
-
-    // Navigate to the new URL
-    router.push(`${pathname}?${params.toString()}`);
-  };
+  // We don't need a page size change handler as the DirectPageSizeSelectorWithParams component
+  // will handle page size changes through URL parameters
 
   // Only show full loading screen on initial load
   if (loading && isInitialLoad.current) {
@@ -221,9 +189,8 @@ export default function CustomerTable() {
         <h2 className="text-lg font-bold mb-3 bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
           Find Customers
         </h2>
-        <SearchField
+        <SearchFieldWithParams
           placeholder="Search by name, mobile number, or address..."
-          initialValue={searchParams.get("search") || ""}
           debounceTime={500}
           className="w-full"
         />
@@ -250,7 +217,8 @@ export default function CustomerTable() {
                 // Clear the search by navigating to the page without search params
                 const params = new URLSearchParams();
                 params.set("page", "1");
-                router.push(`/customers?${params.toString()}`);
+                // Using pathname directly is safe
+                router.push(`${pathname}?${params.toString()}`);
               }}
               className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
             >
@@ -379,7 +347,7 @@ export default function CustomerTable() {
         <div className="mt-6 bg-white p-4 rounded-lg shadow">
           <div className="flex flex-col md:flex-row justify-between items-center mb-4">
             <div className="mb-4 md:mb-0">
-              <DirectPageSizeSelector pageSize={pageSize} />
+              <DirectPageSizeSelectorWithParams />
             </div>
             <div className="text-sm font-medium text-gray-900">
               Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}{" "}
@@ -388,12 +356,7 @@ export default function CustomerTable() {
             </div>
           </div>
 
-          <CommonPagination
-            totalItems={totalCount}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            useClientSideNavigation={true}
-          />
+          <CommonPaginationWithParams totalItems={totalCount} />
         </div>
       )}
     </div>

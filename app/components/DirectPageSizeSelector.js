@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 
-export default function DirectPageSizeSelector({ pageSize }) {
+export default function DirectPageSizeSelector({ pageSize, searchParamsData }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParams = searchParamsData;
   const [isChanging, setIsChanging] = useState(false);
 
   const handlePageSizeChange = (e) => {
