@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./providers/AuthProvider";
+import SessionDebug from "./components/SessionDebug";
+import SessionDebugPanel from "./components/SessionDebugPanel";
 
 // Optimize font loading
 const geistSans = Geist({
@@ -47,7 +49,11 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <SessionDebug />
+          <SessionDebugPanel />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -55,8 +55,9 @@ export const authOptions = {
           // Return user data
           return {
             id: user.id.toString(),
-            name: user.name,
+            name: user.name || "User",
             username: user.username,
+            email: user.email || `${user.username}@example.com`,
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -67,16 +68,63 @@ export const authOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  jwt: {
+    secret:
+      process.env.NEXTAUTH_SECRET ||
+      "a-more-secure-secret-key-for-jwt-encryption-123456789",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      console.log("JWT Callback - Token before:", token);
+      console.log("JWT Callback - User:", user);
+
+      // Initial sign in
       if (user) {
         token.id = user.id;
         token.username = user.username;
+        token.name = user.name;
+        token.email = user.email;
       }
+
+      console.log("JWT Callback - Token after:", token);
       return token;
     },
     async session({ session, token }) {
+      console.log("Session Callback - Session before:", session);
+      console.log("Session Callback - Token:", token);
+
       if (token) {
         // Ensure user object exists
         if (!session.user) {
@@ -86,16 +134,24 @@ export const authOptions = {
         // Add user ID and username to session
         session.user.id = token.id;
         session.user.username = token.username;
+        session.user.name = token.name || token.username;
+        session.user.email = token.email || `${token.username}@example.com`;
 
         console.log("Session updated with user data:", session.user);
       }
+
+      console.log("Session Callback - Session after:", session);
       return session;
     },
   },
   pages: {
     signIn: "/login",
+    signOut: "/login",
+    error: "/login", // Error code passed in query string as ?error=
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret:
+    process.env.NEXTAUTH_SECRET ||
+    "a-more-secure-secret-key-for-jwt-encryption-123456789",
 };
 
 const handler = NextAuth(authOptions);

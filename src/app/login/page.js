@@ -23,11 +23,18 @@ export default function LoginPage() {
 
     // Show loading overlay
     if (typeof window !== "undefined") {
+      console.log("Showing loading overlay...");
       window.dispatchEvent(
         new CustomEvent("show-loading-overlay", {
           detail: { message: "Signing in..." },
         })
       );
+
+      // Set a backup timeout to hide the overlay in case of issues
+      window.loginLoadingTimeout = setTimeout(() => {
+        console.log("Backup timeout: hiding loading overlay...");
+        window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
+      }, 10000);
     }
 
     try {
@@ -64,6 +71,9 @@ export default function LoginPage() {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Now try the actual NextAuth login
+      console.log("Attempting NextAuth login with credentials...");
+
+      // First try with redirect: false to check the result
       const result = await signIn("credentials", {
         username,
         password,
@@ -75,31 +85,30 @@ export default function LoginPage() {
 
       if (result?.error) {
         console.error("Login error:", result.error);
-
-        let errorMessage =
-          "Invalid username or password. Please try admin/admin123";
-
-        // Provide more specific error messages based on the error
-        if (result.error === "CredentialsSignin") {
-          errorMessage =
-            "Invalid username or password. Please try admin/admin123";
-        } else if (result.error.includes("fetch")) {
-          errorMessage =
-            "Network error. Please check your connection and try again.";
-        }
-
-        setError(errorMessage);
+        setError("Invalid username or password. Please try again.");
         setIsLoading(false);
 
         // Hide loading overlay
         if (typeof window !== "undefined") {
+          console.log("Error occurred: hiding loading overlay...");
           window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
+
+          // Clear the backup timeout
+          if (window.loginLoadingTimeout) {
+            clearTimeout(window.loginLoadingTimeout);
+            window.loginLoadingTimeout = null;
+          }
         }
         return;
       }
 
-      router.push("/");
-      router.refresh();
+      console.log("Login successful, navigating to dashboard...");
+
+      // Add a small delay to ensure the session is properly set
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Force a hard navigation to ensure cookies are properly set and recognized
+      window.location.href = "/";
     } catch (error) {
       console.error("Login error:", error);
       setError(
@@ -109,7 +118,14 @@ export default function LoginPage() {
 
       // Hide loading overlay
       if (typeof window !== "undefined") {
+        console.log("Error in catch block: hiding loading overlay...");
         window.dispatchEvent(new CustomEvent("hide-loading-overlay"));
+
+        // Clear the backup timeout
+        if (window.loginLoadingTimeout) {
+          clearTimeout(window.loginLoadingTimeout);
+          window.loginLoadingTimeout = null;
+        }
       }
     }
   };

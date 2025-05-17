@@ -163,7 +163,52 @@ export default function SideNav() {
           {/* Logout button */}
           <div className="p-5 border-t border-blue-700">
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={async () => {
+                // First clear any session data
+                if (typeof window !== "undefined") {
+                  try {
+                    // Show loading indicator
+                    window.dispatchEvent(
+                      new CustomEvent("show-loading-overlay", {
+                        detail: { message: "Logging out..." },
+                      })
+                    );
+
+                    // Use a direct URL for logout with absolute path to ensure proper redirection
+                    const baseUrl = window.location.origin;
+                    const loginUrl = `${baseUrl}/login`;
+
+                    // First try our custom signout endpoint
+                    try {
+                      console.log("Using custom signout endpoint");
+                      window.location.href = `${baseUrl}/api/auth/custom-signout?callbackUrl=${encodeURIComponent(
+                        loginUrl
+                      )}`;
+                      return; // This should navigate away, but if not, the code below will run
+                    } catch (customSignoutError) {
+                      console.error(
+                        "Custom signout failed:",
+                        customSignoutError
+                      );
+                    }
+
+                    // Fallback to NextAuth signOut
+                    console.log("Falling back to NextAuth signOut");
+                    await signOut({
+                      callbackUrl: loginUrl,
+                      redirect: true,
+                    });
+
+                    // Final fallback: If signOut doesn't redirect properly, force navigation
+                    console.log("Forcing navigation to login page");
+                    window.location.href = loginUrl;
+                  } catch (error) {
+                    console.error("Error during logout:", error);
+                    // Last resort fallback
+                    window.location.href = "/login";
+                  }
+                }
+              }}
               className="flex items-center space-x-3 p-3 rounded-lg text-blue-100 hover:bg-blue-700 w-full transition-colors"
             >
               <FaSignOutAlt size={20} />

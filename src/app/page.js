@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import HomeClient from "./page-client";
+import ForceLogin from "./components/ForceLogin";
 
 // Disable static generation for this page
 export const dynamic = "force-dynamic";
@@ -15,7 +16,9 @@ export default function Home() {
         </div>
       }
     >
-      <HomeClient />
+      <ForceLogin>
+        <HomeClient />
+      </ForceLogin>
     </Suspense>
   );
 }

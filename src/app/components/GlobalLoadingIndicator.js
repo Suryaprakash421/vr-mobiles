@@ -20,23 +20,46 @@ export default function GlobalLoadingIndicator() {
   // Listen for custom navigation events
   useEffect(() => {
     const handleNavigationStart = () => {
+      console.log("Navigation start event detected");
       setIsLoading(true);
     };
 
     const handleNavigationEnd = () => {
+      console.log("Navigation end event detected");
       // Add a small delay to ensure the loading indicator is visible
       setTimeout(() => {
         setIsLoading(false);
       }, 500);
     };
 
+    // Handle explicit show/hide loading overlay events
+    const handleShowLoadingOverlay = (event) => {
+      console.log("Show loading overlay event detected", event.detail);
+      setIsLoading(true);
+    };
+
+    const handleHideLoadingOverlay = () => {
+      console.log("Hide loading overlay event detected");
+      setIsLoading(false);
+    };
+
     // Add event listeners
     document.addEventListener("navigationStart", handleNavigationStart);
     document.addEventListener("navigationEnd", handleNavigationEnd);
+    window.addEventListener("show-loading-overlay", handleShowLoadingOverlay);
+    window.addEventListener("hide-loading-overlay", handleHideLoadingOverlay);
 
     return () => {
       document.removeEventListener("navigationStart", handleNavigationStart);
       document.removeEventListener("navigationEnd", handleNavigationEnd);
+      window.removeEventListener(
+        "show-loading-overlay",
+        handleShowLoadingOverlay
+      );
+      window.removeEventListener(
+        "hide-loading-overlay",
+        handleHideLoadingOverlay
+      );
     };
   }, []);
 

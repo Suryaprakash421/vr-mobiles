@@ -10,26 +10,48 @@ import Layout from "./components/Layout";
 export const dynamic = "force-dynamic";
 
 export default function HomeClient() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
+    console.log("Dashboard - Session status:", status);
+    console.log("Dashboard - Session data:", session);
+
     if (status === "unauthenticated") {
+      console.log(
+        "Dashboard - User is not authenticated, redirecting to login..."
+      );
       router.push("/login");
+    } else if (status === "authenticated") {
+      console.log("Dashboard - User is authenticated:", session?.user);
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   if (status === "loading") {
+    console.log("Dashboard - Session is loading...");
     return (
       <Layout>
-        <div className="flex justify-center items-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="flex flex-col justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+          <p className="text-lg font-medium text-gray-700">
+            Loading your dashboard...
+          </p>
         </div>
       </Layout>
     );
   }
 
   if (status === "unauthenticated") {
+    console.log("Dashboard - Rendering null for unauthenticated user");
+
+    // Force redirect if useEffect doesn't trigger
+    setTimeout(() => {
+      if (window.location.pathname === "/") {
+        console.log("Dashboard - Forcing redirect to login page");
+        window.location.href = "/login";
+      }
+    }, 1000);
+
     return null; // Will redirect in the useEffect
   }
 
