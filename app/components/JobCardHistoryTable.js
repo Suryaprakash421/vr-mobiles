@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import JobCardHistoryFilter from "./JobCardHistoryFilter";
+import CommonPagination from "./CommonPagination";
 // Define formatDate function inline to avoid import issues
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -34,18 +35,7 @@ export default function JobCardHistoryTable({ jobCards }) {
     indexOfLastItem
   );
 
-  // Change page
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  // The CommonPagination component will handle page changes directly
 
   const handlePageSizeChange = (e) => {
     setPageSize(Number(e.target.value));
@@ -204,56 +194,12 @@ export default function JobCardHistoryTable({ jobCards }) {
             </div>
           </div>
 
-          <div className="flex justify-center items-center mt-4">
-            <nav className="flex items-center space-x-1">
-              {/* Previous page button */}
-              <button
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-md flex items-center ${
-                  currentPage === 1
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                }`}
-                aria-label="Previous page"
-                title="Previous page"
-              >
-                <span className="text-sm">Previous</span>
-              </button>
-
-              {/* Page numbers */}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded-md ${
-                      page === currentPage
-                        ? "bg-blue-600 text-white font-medium"
-                        : "text-gray-700 hover:bg-gray-100 border border-gray-300"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-
-              {/* Next page button */}
-              <button
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className={`px-3 py-1 rounded-md flex items-center ${
-                  currentPage === totalPages || totalPages === 0
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                }`}
-                aria-label="Next page"
-                title="Next page"
-              >
-                <span className="text-sm">Next</span>
-              </button>
-            </nav>
-          </div>
+          <CommonPagination
+            totalItems={filteredJobCards.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            useClientSideNavigation={true}
+          />
         </div>
       </div>
     </div>

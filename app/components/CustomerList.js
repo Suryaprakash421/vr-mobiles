@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import SearchField from "./SearchField";
-import Pagination from "./Pagination";
+import CommonPagination from "./CommonPagination";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import ConfirmDialog from "./ConfirmDialog";
 
@@ -216,13 +216,11 @@ export default function CustomerList({
           </table>
         </div>
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          pageSize={pageSize}
-          onPageSizeChange={handlePageSizeChange}
+        <CommonPagination
           totalItems={totalCount}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          useClientSideNavigation={false}
         />
       </div>
 

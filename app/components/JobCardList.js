@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import SearchField from "./SearchField";
-import DirectPagination from "./DirectPagination";
+import CommonPagination from "./CommonPagination";
 import LoadingOverlay from "./LoadingOverlay";
 import SimpleStatusDropdown from "./SimpleStatusDropdown";
 import DirectPageSizeSelector from "./DirectPageSizeSelector";
@@ -286,10 +286,11 @@ export default function JobCardList({
           </div>
         </div>
 
-        <DirectPagination
+        <CommonPagination
           totalItems={totalCount}
           currentPage={currentPage}
           pageSize={pageSize}
+          useClientSideNavigation={true}
         />
       </div>
     </div>

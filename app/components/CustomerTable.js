@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import LoadingOverlay from "./LoadingOverlay";
-import DirectPagination from "./DirectPagination";
+import CommonPagination from "./CommonPagination";
 import SearchField from "./SearchField";
 import DirectPageSizeSelector from "./DirectPageSizeSelector";
 
@@ -388,10 +388,11 @@ export default function CustomerTable() {
             </div>
           </div>
 
-          <DirectPagination
+          <CommonPagination
             totalItems={totalCount}
             currentPage={currentPage}
             pageSize={pageSize}
+            useClientSideNavigation={true}
           />
         </div>
       )}
