@@ -7,22 +7,36 @@ const globalForPrisma = global;
 // Create a robust Prisma client with error handling
 let prismaClient;
 
-try {
-  // Check if we already have a Prisma client instance
-  if (globalForPrisma.prisma) {
-    prismaClient = globalForPrisma.prisma;
-  } else {
-    // Create a new Prisma client instance with simplified configuration
-    // to avoid potential issues with the PrismaClient constructor
-    prismaClient = new PrismaClient({
+// Function to create a new PrismaClient instance
+function createPrismaClient() {
+  try {
+    return new PrismaClient({
       log: ["error"],
+      errorFormat: "minimal",
     });
-
-    // Save to global in development
-    if (process.env.NODE_ENV !== "production") {
-      globalForPrisma.prisma = prismaClient;
-    }
+  } catch (e) {
+    console.error("Failed to create Prisma Client", e);
+    throw e;
   }
+}
+
+// Ensure Prisma Client is initialized properly
+if (process.env.NODE_ENV === "production") {
+  // In production, create a new instance every time
+  // This ensures we don't have connection issues in serverless environments
+  prismaClient = createPrismaClient();
+} else {
+  // In development, reuse the same instance
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient();
+  }
+  prismaClient = globalForPrisma.prisma;
+}
+
+// Error handling wrapper
+try {
+  // Test the connection to ensure it's working
+  prismaClient.$connect();
 } catch (error) {
   console.error("Failed to initialize Prisma client:", error);
   // Create a fallback client that logs errors

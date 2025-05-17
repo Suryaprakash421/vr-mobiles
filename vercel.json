@@ -4,12 +4,6 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["sin1"],
-  "crons": [
-    {
-      "path": "/api/cron-job",
-      "schedule": "0 0 * * *"
-    }
-  ],
   "env": {
     "NEXT_DISABLE_STATIC_GENERATION": "true",
     "NEXT_STATIC_GENERATION_TIMEOUT": "60",
