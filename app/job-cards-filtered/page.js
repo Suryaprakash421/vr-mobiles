@@ -1,5 +1,5 @@
-import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import prisma from "../../lib/prisma";
 import Layout from "../components/Layout";
@@ -19,16 +19,15 @@ export default async function JobCardsFilteredPage(props) {
   const search = searchParams.search || "";
   const page = parseInt(searchParams.page || "1");
   const pageSize = parseInt(searchParams.pageSize || "5");
-  const status = searchParams.status || "";
+  const status = searchParams.status || "all";
 
   console.log("Status parameter:", status);
-  console.log("All search parameters:", JSON.stringify(searchParams));
+  console.log("Raw searchParams:", JSON.stringify(searchParams));
 
   // Calculate pagination offsets
   const skip = (page - 1) * pageSize;
   const take = pageSize;
 
-  // Create where clause for search
   let whereClause = {};
 
   // If search parameter exists, add it to the where clause
@@ -86,7 +85,7 @@ export default async function JobCardsFilteredPage(props) {
       <div className="p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <h1 className="text-2xl font-extrabold text-gray-900 mb-4 md:mb-0">
-            Job Cards (Filtered)
+            Filtered Job Cards
           </h1>
         </div>
 
@@ -96,6 +95,7 @@ export default async function JobCardsFilteredPage(props) {
           currentPage={page}
           pageSize={pageSize}
           currentStatus={status}
+          showStatusFilter={true}
         />
       </div>
     </Layout>

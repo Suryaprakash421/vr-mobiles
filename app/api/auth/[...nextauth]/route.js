@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import prisma from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { compare } from "bcrypt";
 
 export const authOptions = {
@@ -12,19 +12,11 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log(
-          "Authorize function called with credentials:",
-          credentials?.username
-        );
-
         if (!credentials?.username || !credentials?.password) {
-          console.log("Missing username or password");
           return null;
         }
 
         try {
-          console.log("Looking for user with username:", credentials.username);
-
           const user = await prisma.user.findUnique({
             where: {
               username: credentials.username,
@@ -32,37 +24,29 @@ export const authOptions = {
           });
 
           if (!user) {
-            console.log("User not found for username:", credentials.username);
+            console.log("User not found");
             return null;
           }
 
           // For debugging
-          console.log("Found user:", user.username, "with ID:", user.id);
+          console.log("Found user:", user.username);
 
-          try {
-            // Compare passwords
-            console.log("Comparing passwords...");
-            const isPasswordValid = await compare(
-              credentials.password,
-              user.password
-            );
-            console.log("Password comparison result:", isPasswordValid);
+          // In a real application, you would use bcrypt to compare passwords
+          const isPasswordValid = await compare(
+            credentials.password,
+            user.password
+          );
+          console.log("Password valid:", isPasswordValid);
 
-            if (!isPasswordValid) {
-              console.log("Password is invalid");
-              return null;
-            }
-
-            console.log("Authentication successful for user:", user.username);
-            return {
-              id: user.id.toString(),
-              name: user.name,
-              username: user.username,
-            };
-          } catch (passwordError) {
-            console.error("Password comparison error:", passwordError);
+          if (!isPasswordValid) {
             return null;
           }
+
+          return {
+            id: user.id.toString(),
+            name: user.name,
+            username: user.username,
+          };
         } catch (error) {
           console.error("Auth error:", error);
           return null;

@@ -1,22 +1,26 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 // Status options with their display properties
 const STATUS_OPTIONS = [
-  { value: "all", label: "All", color: "#4338ca" },
-  { value: "pending", label: "Pending", color: "#d97706" },
-  { value: "in-progress", label: "In Progress", color: "#2563eb" },
-  { value: "completed", label: "Completed", color: "#059669" },
+  { value: "all", label: "All Statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "completed", label: "Completed" },
 ];
 
 export default function StatusFilter({ currentStatus = "all" }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [status, setStatus] = useState(currentStatus);
 
-  // Ensure currentStatus is a string and has a default value
-  const status = currentStatus ? String(currentStatus) : "all";
+  // Update status state when currentStatus prop changes
+  useEffect(() => {
+    setStatus(currentStatus);
+  }, [currentStatus]);
 
   console.log(`StatusFilter rendered with currentStatus: "${status}"`);
   console.log("Current URL:", pathname + "?" + searchParams.toString());
@@ -26,65 +30,43 @@ export default function StatusFilter({ currentStatus = "all" }) {
 
     console.log(`Status changed to: ${newStatus}`);
 
-    // Create a form and submit it to force a full page reload
-    const form = document.createElement("form");
-    form.method = "GET";
-    form.action = pathname;
+    // Create a new URLSearchParams object to preserve existing parameters
+    const params = new URLSearchParams(searchParams.toString());
 
-    // Add all existing parameters except status and page
-    for (const [key, value] of searchParams.entries()) {
-      if (key !== "status" && key !== "page") {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
-      }
-    }
-
-    // Add the new status parameter if it's not "all"
+    // Update status parameter and reset to first page
     if (newStatus !== "all") {
-      const statusInput = document.createElement("input");
-      statusInput.type = "hidden";
-      statusInput.name = "status";
-      statusInput.value = newStatus;
-      form.appendChild(statusInput);
+      params.set("status", newStatus);
+    } else {
+      params.delete("status");
     }
+    params.set("page", "1");
 
-    // Always reset to page 1
-    const pageInput = document.createElement("input");
-    pageInput.type = "hidden";
-    pageInput.name = "page";
-    pageInput.value = "1";
-    form.appendChild(pageInput);
+    // Build the new URL - use the job-cards-filtered page for status filtering
+    const basePath =
+      pathname === "/job-cards" ? "/job-cards-filtered" : pathname;
+    const newUrl = `${basePath}?${params.toString()}`;
+    console.log(`Navigating to: ${newUrl}`);
 
-    // Submit the form
-    document.body.appendChild(form);
-    console.log("Submitting form with status:", newStatus);
-    form.submit();
+    // Use window.location for a hard navigation to ensure server-side rendering
+    window.location.href = newUrl;
   };
 
   return (
     <div className="flex items-center">
       <label
-        htmlFor="statusFilter"
-        className="mr-2 text-sm font-medium text-gray-900"
+        htmlFor="status-filter"
+        className="block text-sm font-medium text-gray-700 mr-2"
       >
-        Filter by Status:
+        Status:
       </label>
       <select
-        id="statusFilter"
+        id="status-filter"
         value={status}
         onChange={handleStatusChange}
-        className="border border-gray-300 rounded-md px-3 py-2 text-sm font-medium focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-indigo-700"
-        style={{ fontWeight: 500 }}
+        className="block w-full max-w-xs rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-medium text-gray-900 px-3 py-2"
       >
         {STATUS_OPTIONS.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            style={{ color: option.color, fontWeight: 500 }}
-          >
+          <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../api/auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma";
+import prisma from "../../lib/prisma";
 import Layout from "../components/Layout";
 import JobCardList from "../components/JobCardList";
 // No need to import SearchBar as it's used in JobCardList component
@@ -21,17 +21,10 @@ export default async function JobCardsPage(props) {
   const search = searchParams.search || "";
   const page = parseInt(searchParams.page || "1");
   const pageSize = parseInt(searchParams.pageSize || "5");
-  const status = searchParams.status || "";
+  const status = searchParams.status || "all";
 
   console.log("Status parameter:", status);
-
-  // Log all search parameters for debugging
-  console.log("Search parameters:", {
-    search,
-    page,
-    pageSize,
-    status,
-  });
+  console.log("Raw searchParams:", JSON.stringify(searchParams));
 
   // Calculate pagination offsets
   const skip = (page - 1) * pageSize;
@@ -55,7 +48,7 @@ export default async function JobCardsPage(props) {
   if (status && status !== "all") {
     whereClause = {
       ...whereClause,
-      status: status, // Direct comparison works better with Prisma
+      status: status,
     };
     console.log(`Filtering by status: ${status}`);
     console.log(
@@ -104,6 +97,7 @@ export default async function JobCardsPage(props) {
           currentPage={page}
           pageSize={pageSize}
           currentStatus={status}
+          showStatusFilter={false}
         />
       </div>
     </Layout>
