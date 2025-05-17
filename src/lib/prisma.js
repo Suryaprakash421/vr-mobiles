@@ -1,62 +1,51 @@
-import { PrismaClient } from "@prisma/client";
+// Simplified and more reliable Prisma client initialization
+// that works better in serverless environments like Vercel
 
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
-const globalForPrisma = global;
-
-// Create a robust Prisma client with error handling
+// Use dynamic import to ensure Prisma is only loaded when needed
+// This helps prevent issues with Vercel's serverless environment
 let prismaClient;
 
-// Function to create a new PrismaClient instance
-function createPrismaClient() {
+// This function will be called to get the Prisma client
+// It uses a lazy-loading pattern that works better in serverless environments
+async function getPrismaClient() {
+  if (prismaClient) {
+    return prismaClient;
+  }
+
   try {
-    return new PrismaClient({
+    // Dynamically import PrismaClient only when needed
+    const { PrismaClient } = await import("@prisma/client");
+
+    // Create a new instance with minimal logging
+    const client = new PrismaClient({
       log: ["error"],
       errorFormat: "minimal",
     });
-  } catch (e) {
-    console.error("Failed to create Prisma Client", e);
-    throw e;
+
+    // Cache the client for future use
+    prismaClient = client;
+    return client;
+  } catch (error) {
+    console.error("Failed to initialize Prisma client:", error);
+    throw new Error(`Prisma client initialization failed: ${error.message}`);
   }
 }
 
-// Ensure Prisma Client is initialized properly
-if (process.env.NODE_ENV === "production") {
-  // In production, create a new instance every time
-  // This ensures we don't have connection issues in serverless environments
-  prismaClient = createPrismaClient();
-} else {
-  // In development, reuse the same instance
-  if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = createPrismaClient();
+// Create a proxy that will lazily initialize the Prisma client
+// This ensures we don't try to create the client until it's actually used
+const prisma = new Proxy(
+  {},
+  {
+    get: function (target, prop) {
+      // Return a function that initializes Prisma when called
+      return async function (...args) {
+        const client = await getPrismaClient();
+        return client[prop](...args);
+      };
+    },
   }
-  prismaClient = globalForPrisma.prisma;
-}
+);
 
-// Error handling wrapper
-try {
-  // Test the connection to ensure it's working
-  prismaClient.$connect();
-} catch (error) {
-  console.error("Failed to initialize Prisma client:", error);
-  // Create a fallback client that logs errors
-  prismaClient = new Proxy(
-    {},
-    {
-      get: function (target, prop) {
-        // Return a function that logs the error and returns a rejected promise
-        return function () {
-          const error = new Error(
-            `Prisma client not initialized. Cannot call ${prop}`
-          );
-          console.error(error);
-          return Promise.reject(error);
-        };
-      },
-    }
-  );
-}
-
-export const prisma = prismaClient;
-
+// Export the proxy as both default and named export
+export { prisma };
 export default prisma;

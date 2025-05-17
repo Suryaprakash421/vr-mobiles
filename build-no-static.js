@@ -24,9 +24,10 @@ console.log("Creating temporary .env.local for build...");
 fs.writeFileSync(envLocalPath, envLocalContent);
 
 try {
-  // Generate Prisma client
-  console.log("Generating Prisma client...");
-  execSync("npx prisma generate", { stdio: "inherit" });
+  // Prisma client generation is now handled by prisma-vercel.js
+  console.log(
+    "Skipping Prisma client generation (handled by prisma-vercel.js)..."
+  );
 
   // Create a temporary next.config.js that excludes problematic routes
   const nextConfigPath = path.join(__dirname, "next.config.mjs");

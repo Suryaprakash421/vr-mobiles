@@ -21,14 +21,10 @@ pagesToSkip.forEach((pagePath) => {
   }
 });
 
-// Generate Prisma client before build to ensure it's available
-console.log("Generating Prisma client...");
-try {
-  execSync("npx prisma generate", { stdio: "inherit" });
-  console.log("Prisma client generated successfully.");
-} catch (error) {
-  console.error("Error generating Prisma client:", error.message);
-}
+// Prisma client generation is now handled by prisma-vercel.js
+console.log(
+  "Skipping Prisma client generation (handled by prisma-vercel.js)..."
+);
 
 // Export the list of renamed files so they can be restored after build
 module.exports = renamedFiles;

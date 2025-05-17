@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
-import prisma from "@/lib/prisma";
+import { PrismaClient } from "@prisma/client";
+
+// Create a new PrismaClient instance for this API route
+// This ensures we have a fresh connection for each serverless function
+const prisma = new PrismaClient();
 
 // GET /api/customers-simple - Get all customers with minimal processing
 export async function GET(request) {
@@ -65,6 +69,9 @@ export async function GET(request) {
     } catch (dbError) {
       console.error("Database error:", dbError);
       // Return empty array on database error
+    } finally {
+      // Disconnect from the database to prevent connection leaks
+      await prisma.$disconnect();
     }
 
     return NextResponse.json({
@@ -74,6 +81,13 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Error in customers-simple API:", error);
+    // Make sure to disconnect even if there's an error
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error("Error disconnecting from database:", disconnectError);
+    }
+
     return NextResponse.json(
       {
         error: "Failed to fetch customers",
