@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
-import prisma from "@/lib/prisma";
+
+// Import PrismaClient directly for this route to avoid initialization issues
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 // GET /api/customers-simple - Get all customers with minimal processing
 export async function GET(request) {
@@ -52,13 +55,26 @@ export async function GET(request) {
       // Return empty array on database error
     }
 
-    return NextResponse.json({
+    // Create the response
+    const response = NextResponse.json({
       customers,
       totalCount: customers.length,
       success: true,
     });
+
+    // Disconnect from the database to prevent connection leaks
+    await prisma.$disconnect();
+
+    return response;
   } catch (error) {
     console.error("Error in customers-simple API:", error);
+
+    // Make sure to disconnect even if there's an error
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error("Error disconnecting from database:", disconnectError);
+    }
 
     return NextResponse.json(
       {
