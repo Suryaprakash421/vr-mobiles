@@ -10,7 +10,10 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["sin1"],
-  "crons": {
-    "cleanup": "0 0 * * *"
-  }
+  "crons": [
+    {
+      "path": "/api/cron-job",
+      "schedule": "0 * * * *"
+    }
+  ]
 }
