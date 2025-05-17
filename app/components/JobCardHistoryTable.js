@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import JobCardHistoryFilter from "./JobCardHistoryFilter";
-import CommonPagination from "./CommonPagination";
+import ReusableStatusFilter from "./ReusableStatusFilter";
+import SimplePagination from "./SimplePagination";
 // Define formatDate function inline to avoid import issues
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -53,7 +53,7 @@ export default function JobCardHistoryTable({ jobCards }) {
         <h3 className="text-lg font-medium text-gray-900 mb-2 md:mb-0">
           Job Card History
         </h3>
-        <JobCardHistoryFilter
+        <ReusableStatusFilter
           currentStatus={statusFilter}
           onStatusChange={handleStatusChange}
         />
@@ -194,11 +194,11 @@ export default function JobCardHistoryTable({ jobCards }) {
             </div>
           </div>
 
-          <CommonPagination
+          <SimplePagination
             totalItems={filteredJobCards.length}
             currentPage={currentPage}
             pageSize={pageSize}
-            useClientSideNavigation={true}
+            onPageChange={setCurrentPage}
           />
         </div>
       </div>

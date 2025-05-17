@@ -1,89 +1,69 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import SearchField from "./SearchField";
 import SimplePagination from "./SimplePagination";
 import LoadingOverlay from "./LoadingOverlay";
 import SimpleStatusDropdown from "./SimpleStatusDropdown";
-import ClientPageSizeSelector from "./ClientPageSizeSelector";
 import ReusableStatusFilter from "./ReusableStatusFilter";
 
-export default function JobCardList({
+export default function ClientFilteredJobCardList({
   jobCards,
-  totalCount,
-  currentPage = 1,
-  pageSize = 10,
   showSearch = true,
   showStatusFilter = true,
-  currentStatus = "all",
+  initialStatus = "all",
+  initialPage = 1,
+  initialPageSize = 10,
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  
+  // State for client-side filtering and pagination
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const [statusFilter, setStatusFilter] = useState(currentStatus);
-  const [currentPageState, setCurrentPageState] = useState(currentPage);
-  const [pageSizeState, setPageSizeState] = useState(pageSize);
 
-  // Filter job cards by status
+  // Filter job cards by status and search term
   const filteredJobCards = useMemo(() => {
-    if (statusFilter === "all") {
-      return jobCards;
-    }
-    return jobCards.filter((jobCard) => jobCard.status === statusFilter);
-  }, [jobCards, statusFilter]);
-
+    console.log(`Filtering with status: ${statusFilter}, search: ${searchTerm}`);
+    
+    return jobCards.filter((jobCard) => {
+      // Filter by status
+      const statusMatch = statusFilter === "all" || jobCard.status === statusFilter;
+      
+      // Filter by search term
+      let searchMatch = true;
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        searchMatch = 
+          (jobCard.billNo && jobCard.billNo.toString().includes(searchTerm)) ||
+          (jobCard.customerName && jobCard.customerName.toLowerCase().includes(searchLower)) ||
+          (jobCard.mobileNumber && jobCard.mobileNumber.toLowerCase().includes(searchLower)) ||
+          (jobCard.model && jobCard.model.toLowerCase().includes(searchLower));
+      }
+      
+      return statusMatch && searchMatch;
+    });
+  }, [jobCards, statusFilter, searchTerm]);
+  
   // Calculate total count after filtering
   const filteredTotalCount = filteredJobCards.length;
-
+  
   // Get current page of filtered job cards
-  const indexOfLastItem = currentPageState * pageSizeState;
-  const indexOfFirstItem = indexOfLastItem - pageSizeState;
-  const currentFilteredJobCards = useMemo(() => {
+  const paginatedJobCards = useMemo(() => {
+    const indexOfLastItem = currentPage * pageSize;
+    const indexOfFirstItem = indexOfLastItem - pageSize;
     return filteredJobCards.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredJobCards, indexOfFirstItem, indexOfLastItem]);
-
-  // Update pageSizeState when pageSize prop changes
-  useEffect(() => {
-    setPageSizeState(pageSize);
-  }, [pageSize]);
-
-  // Reset to page 1 if current page is out of bounds after filtering
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filteredTotalCount / pageSizeState));
-    if (currentPageState > maxPage) {
-      setCurrentPageState(1);
-    }
-    console.log(
-      `JobCardList: filteredTotalCount=${filteredTotalCount}, pageSizeState=${pageSizeState}, maxPage=${maxPage}, currentPageState=${currentPageState}`
-    );
-  }, [filteredTotalCount, pageSizeState, currentPageState]);
-
-  // Handle status filter change
-  const handleStatusChange = (newStatus) => {
-    setStatusFilter(newStatus);
-    setCurrentPageState(1); // Reset to first page when changing status filter
-  };
-
-  // Handle page change
-  const handlePageChange = (newPage) => {
-    setCurrentPageState(newPage);
-  };
-
-  // Handle page size change
-  const handlePageSizeChange = (newSize) => {
-    // Update page size state
-    setPageSizeState(newSize);
-    // Reset to first page when changing page size
-    setCurrentPageState(1);
-  };
+  }, [filteredJobCards, currentPage, pageSize]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    // Use a consistent date format that doesn't depend on locale
     return date.toISOString().split("T")[0].split("-").reverse().join("/");
   };
 
@@ -126,7 +106,41 @@ export default function JobCardList({
     }
   };
 
-  // Search is handled server-side through URL parameters
+  // Handle status filter change
+  const handleStatusChange = (newStatus) => {
+    console.log(`Status changed to: ${newStatus}`);
+    setStatusFilter(newStatus);
+    setCurrentPage(1); // Reset to first page when changing filter
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    console.log(`Page changed to: ${newPage}`);
+    setCurrentPage(newPage);
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize) => {
+    console.log(`Page size changed to: ${newSize}`);
+    setPageSize(parseInt(newSize));
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+  
+  // Handle search change
+  const handleSearchChange = (newSearch) => {
+    console.log(`Search changed to: ${newSearch}`);
+    setSearchTerm(newSearch);
+    setCurrentPage(1); // Reset to first page when changing search
+    
+    // Update URL for search term (optional)
+    const params = new URLSearchParams(searchParams.toString());
+    if (newSearch) {
+      params.set("search", newSearch);
+    } else {
+      params.delete("search");
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   if (!jobCards || jobCards.length === 0) {
     return (
@@ -140,7 +154,8 @@ export default function JobCardList({
               <div className="flex-grow">
                 <SearchField
                   placeholder="Search by bill number, name, or phone..."
-                  initialValue={searchParams.get("search") || ""}
+                  initialValue={searchTerm}
+                  onSearch={handleSearchChange}
                   debounceTime={500}
                   className="w-full"
                 />
@@ -158,14 +173,9 @@ export default function JobCardList({
         )}
         <div className="text-center py-10 bg-white rounded-lg shadow">
           <p className="text-gray-500">No job cards found.</p>
-          {searchParams?.get("search") && (
+          {searchTerm && (
             <button
-              onClick={() => {
-                // Clear the search by navigating to the page without search params
-                const params = new URLSearchParams();
-                params.set("page", "1");
-                router.push(`/job-cards?${params.toString()}`);
-              }}
+              onClick={() => handleSearchChange("")}
               className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md font-medium transition-colors"
             >
               Clear Search
@@ -187,7 +197,8 @@ export default function JobCardList({
             <div className="flex-grow">
               <SearchField
                 placeholder="Search by bill number, name, or phone..."
-                initialValue={searchParams.get("search") || ""}
+                initialValue={searchTerm}
+                onSearch={handleSearchChange}
                 debounceTime={500}
                 className="w-full"
               />
@@ -267,8 +278,8 @@ export default function JobCardList({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {currentFilteredJobCards.length > 0 ? (
-              currentFilteredJobCards.map((jobCard) => (
+            {paginatedJobCards.length > 0 ? (
+              paginatedJobCards.map((jobCard) => (
                 <tr
                   key={jobCard.id}
                   className="hover:bg-blue-50 transition-colors duration-150"
@@ -340,30 +351,38 @@ export default function JobCardList({
       <div className="mt-6 bg-white p-4 rounded-lg shadow">
         <div className="flex flex-col md:flex-row justify-between items-center mb-4">
           <div className="mb-4 md:mb-0">
-            <ClientPageSizeSelector
-              pageSize={pageSizeState}
-              onPageSizeChange={handlePageSizeChange}
-            />
+            <div className="flex items-center space-x-2">
+              <label htmlFor="pageSize" className="text-sm font-medium text-gray-900">
+                Show
+              </label>
+              <select
+                id="pageSize"
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(e.target.value)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900 font-medium"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span className="text-sm font-medium text-gray-900">entries</span>
+            </div>
           </div>
           <div className="text-sm font-medium text-gray-900">
-            Showing{" "}
-            {filteredJobCards.length > 0
-              ? Math.min(
-                  (currentPageState - 1) * pageSizeState + 1,
-                  filteredTotalCount
-                )
-              : 0}{" "}
-            to {Math.min(currentPageState * pageSizeState, filteredTotalCount)}{" "}
-            of {filteredTotalCount} entries
-            {statusFilter !== "all" &&
-              ` (filtered from ${jobCards.length} total entries)`}
+            Showing {filteredTotalCount > 0 ? Math.min((currentPage - 1) * pageSize + 1, filteredTotalCount) : 0} to{" "}
+            {Math.min(currentPage * pageSize, filteredTotalCount)} of {filteredTotalCount} entries
+            {statusFilter !== "all" && filteredTotalCount !== jobCards.length && (
+              <span> (filtered from {jobCards.length} total entries)</span>
+            )}
           </div>
         </div>
 
         <SimplePagination
           totalItems={filteredTotalCount}
-          currentPage={currentPageState}
-          pageSize={pageSizeState}
+          currentPage={currentPage}
+          pageSize={pageSize}
           onPageChange={handlePageChange}
         />
       </div>

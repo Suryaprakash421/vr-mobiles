@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import prisma from "../../lib/prisma";
 import Layout from "../components/Layout";
-import JobCardList from "../components/JobCardList";
-// No need to import SearchBar as it's used in JobCardList component
+import ClientFilteredJobCardList from "../components/ClientFilteredJobCardList";
+// No need to import SearchBar as it's used in the component
 
 export default async function JobCardsPage(props) {
   const session = await getServerSession(authOptions);
@@ -13,65 +13,18 @@ export default async function JobCardsPage(props) {
     redirect("/login");
   }
 
-  // Get pagination, search, and status filter parameters safely
-  // Use a more direct approach to avoid Next.js warnings
+  // Get search parameter for initial state
   const searchParams = props.searchParams || {};
+  const initialSearch = searchParams.search || "";
+  const initialPage = parseInt(searchParams.page || "1");
+  const initialPageSize = parseInt(searchParams.pageSize || "5");
+  const initialStatus = searchParams.status || "all";
 
-  // Extract parameters with fallbacks
-  const search = searchParams.search || "";
-  const page = parseInt(searchParams.page || "1");
-  const pageSize = parseInt(searchParams.pageSize || "5");
-  const status = searchParams.status || "all";
-
-  console.log("Status parameter:", status);
-  console.log("Raw searchParams:", JSON.stringify(searchParams));
-
-  // Calculate pagination offsets
-  const skip = (page - 1) * pageSize;
-  const take = pageSize;
-
-  let whereClause = {};
-
-  // If search parameter exists, add it to the where clause
-  if (search) {
-    whereClause = {
-      OR: [
-        { billNo: isNaN(parseInt(search)) ? undefined : parseInt(search) },
-        { customerName: { contains: search } },
-        { mobileNumber: { contains: search } },
-        { model: { contains: search } },
-      ].filter(Boolean),
-    };
-  }
-
-  // If status parameter exists, add it to the where clause
-  if (status && status !== "all") {
-    whereClause = {
-      ...whereClause,
-      status: status,
-    };
-    console.log(`Filtering by status: ${status}`);
-    console.log(
-      "Where clause with status filter:",
-      JSON.stringify(whereClause)
-    );
-  } else {
-    console.log("No status filter applied");
-  }
-
-  // Get total count for pagination
-  const totalCount = await prisma.jobCard.count({
-    where: whereClause,
-  });
-
-  // Get paginated job cards
+  // Get all job cards (no pagination or filtering)
   const jobCards = await prisma.jobCard.findMany({
-    where: whereClause,
     orderBy: {
       createdAt: "desc",
     },
-    skip,
-    take,
     include: {
       createdBy: {
         select: {
@@ -91,13 +44,12 @@ export default async function JobCardsPage(props) {
           </h1>
         </div>
 
-        <JobCardList
+        <ClientFilteredJobCardList
           jobCards={jobCards}
-          totalCount={totalCount}
-          currentPage={page}
-          pageSize={pageSize}
-          currentStatus={status}
-          showStatusFilter={false}
+          initialStatus={initialStatus}
+          initialPage={initialPage}
+          initialPageSize={initialPageSize}
+          showStatusFilter={true}
         />
       </div>
     </Layout>

@@ -9,6 +9,7 @@ export default function CommonPagination({
   currentPage = 1,
   pageSize = 10,
   useClientSideNavigation = true,
+  onPageChange = null,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -18,7 +19,11 @@ export default function CommonPagination({
 
   // Update page count when totalItems or pageSize changes
   useEffect(() => {
-    setPageCount(Math.ceil(totalItems / pageSize));
+    const calculatedPageCount = Math.max(1, Math.ceil(totalItems / pageSize));
+    setPageCount(calculatedPageCount);
+    console.log(
+      `Pagination: totalItems=${totalItems}, pageSize=${pageSize}, pageCount=${calculatedPageCount}`
+    );
   }, [totalItems, pageSize]);
 
   // Handle page change
@@ -26,6 +31,18 @@ export default function CommonPagination({
     if (newPage >= 1 && newPage <= pageCount && !isNavigating) {
       setIsNavigating(true);
 
+      // If onPageChange prop is provided, use it for client-side pagination
+      if (onPageChange) {
+        onPageChange(newPage);
+
+        // Reset navigation state after a short delay
+        setTimeout(() => {
+          setIsNavigating(false);
+        }, 300);
+        return;
+      }
+
+      // Otherwise, use URL-based navigation
       // Create a new URLSearchParams object to preserve existing parameters
       const params = new URLSearchParams(searchParams.toString());
 
@@ -53,62 +70,55 @@ export default function CommonPagination({
     }
   };
 
-  // Generate page numbers to display with the new logic
+  // Generate page numbers to display with a simpler, more reliable logic
   const getPageNumbers = () => {
     const pages = [];
 
-    if (pageCount <= 3) {
-      // Show all pages if there are 3 or fewer
+    // Always show at least 5 page numbers or all pages if less than 5
+    const maxVisiblePages = 5;
+
+    if (pageCount <= maxVisiblePages) {
+      // Show all pages if there are 5 or fewer
       for (let i = 1; i <= pageCount; i++) {
         pages.push(i);
       }
     } else {
-      // Always show first page
-      pages.push(1);
+      // Calculate the range of pages to show
+      let startPage = Math.max(
+        1,
+        currentPage - Math.floor(maxVisiblePages / 2)
+      );
+      let endPage = startPage + maxVisiblePages - 1;
 
-      // For current page 1, show pages 1, 2, ..., last
-      if (currentPage === 1) {
-        pages.push(2);
-        if (pageCount > 3) {
-          pages.push("ellipsis");
-        }
-      }
-      // For current page 2, show pages 1, 2, 3, ..., last
-      else if (currentPage === 2) {
-        pages.push(2);
-        if (pageCount > 3) {
-          pages.push(3);
-          if (pageCount > 4) {
-            pages.push("ellipsis");
-          }
-        }
-      }
-      // For last page, show pages 1, ..., second-to-last, last
-      else if (currentPage === pageCount) {
-        if (pageCount > 3) {
-          pages.push("ellipsis");
-          pages.push(pageCount - 1);
-        }
-      }
-      // For second-to-last page, show pages 1, ..., third-to-last, second-to-last, last
-      else if (currentPage === pageCount - 1) {
-        if (pageCount > 3) {
-          pages.push("ellipsis");
-          if (pageCount > 4) {
-            pages.push(pageCount - 2);
-          }
-          pages.push(pageCount - 1);
-        }
-      }
-      // For pages in the middle, show pages 1, ..., current, ..., last
-      else {
-        pages.push("ellipsis1");
-        pages.push(currentPage);
-        pages.push("ellipsis2");
+      // Adjust if we're near the end
+      if (endPage > pageCount) {
+        endPage = pageCount;
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
       }
 
-      // Always show last page if not already included
-      if (!pages.includes(pageCount)) {
+      // Always include first page
+      if (startPage > 1) {
+        pages.push(1);
+        // Add ellipsis if there's a gap
+        if (startPage > 2) {
+          pages.push("ellipsis1");
+        }
+      }
+
+      // Add the visible page numbers
+      for (let i = startPage; i <= endPage; i++) {
+        if (i > 1 && i < pageCount) {
+          // Skip first and last as they're handled separately
+          pages.push(i);
+        }
+      }
+
+      // Always include last page
+      if (endPage < pageCount) {
+        // Add ellipsis if there's a gap
+        if (endPage < pageCount - 1) {
+          pages.push("ellipsis2");
+        }
         pages.push(pageCount);
       }
     }
