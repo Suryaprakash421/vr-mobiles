@@ -1,20 +1,17 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "node prepare-vercel.js && npm run vercel-build",
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["sin1"],
   "env": {
     "NEXT_DISABLE_STATIC_GENERATION": "true",
     "NEXT_STATIC_GENERATION_TIMEOUT": "60",
-    "NEXTAUTH_SECRET": "your-secret-key-for-jwt-encryption",
+    "NEXTAUTH_SECRET": "a-more-secure-secret-key-for-jwt-encryption-123456789",
     "NEXTAUTH_DEBUG": "false"
   },
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_BASE_URL": "https://example.com",
-      "NEXTAUTH_URL": "https://example.com",
-      "PRISMA_GENERATE_DATAPROXY": "false",
       "NODE_OPTIONS": "--max-old-space-size=3072"
     }
   }

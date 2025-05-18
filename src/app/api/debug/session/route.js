@@ -7,13 +7,14 @@ import { NextResponse } from "next/server";
 export async function GET(request) {
   try {
     // Get all cookies for debugging - using the correct pattern for Next.js 15
-    const cookiesList = cookies();
-    // In Next.js 15, we should NOT use await with cookies methods
-    const allCookies = cookiesList.getAll();
+    // In Next.js 15, we need to await the cookies() function itself
+    const cookieStore = await cookies();
+    // Then we need to await the methods on the cookie store
+    const allCookies = await cookieStore.getAll();
     const cookieNames = allCookies.map((cookie) => cookie.name);
 
-    // Check for session token
-    const sessionCookie = cookiesList.get("next-auth.session-token");
+    // Check for session token - also needs to be awaited
+    const sessionCookie = await cookieStore.get("next-auth.session-token");
 
     // Get the session using getServerSession
     const session = await getServerSession(authOptions);

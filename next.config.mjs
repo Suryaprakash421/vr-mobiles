@@ -2,9 +2,9 @@
 const nextConfig = {
   // Environment variables
   env: {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL || "http://localhost:3001",
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL || "http://localhost:3002",
     NEXT_PUBLIC_API_BASE_URL:
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001",
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3002",
   },
   // Force dynamic rendering for all pages
   experimental: {

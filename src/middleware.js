@@ -49,6 +49,8 @@ export async function middleware(request) {
       "/api/auth",
       "/api/debug",
       "/api/auth/custom-signout",
+      "/manifest.json",
+      "/icons",
     ];
 
     // Check if the requested path is a public path
