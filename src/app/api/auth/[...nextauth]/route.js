@@ -23,12 +23,12 @@ export const authOptions = {
 
           console.log("Looking for user with username:", credentials.username);
 
-          // Find the user - use a direct query to avoid any Prisma issues
-          const users = await prisma.$queryRaw`
-            SELECT * FROM User WHERE username = ${credentials.username} LIMIT 1
-          `;
-
-          const user = users.length > 0 ? users[0] : null;
+          // Find the user using Prisma ORM
+          const user = await prisma.user.findUnique({
+            where: {
+              username: credentials.username,
+            },
+          });
 
           if (!user) {
             console.log("User not found for username:", credentials.username);

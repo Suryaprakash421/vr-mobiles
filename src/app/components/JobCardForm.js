@@ -87,12 +87,10 @@ export default function JobCardForm({ jobCard, isEditing = false }) {
       console.log(`Sending ${method} request to ${url}`);
 
       try {
-        // Use absolute URL to avoid parsing issues
-        const baseUrl = window.location.origin;
-        const absoluteUrl = `${baseUrl}${url}`;
-        console.log(`Sending ${method} request to ${absoluteUrl}`);
+        // Use relative URL (works in both dev and production)
+        console.log(`Sending ${method} request to ${url}`);
 
-        const response = await fetch(absoluteUrl, {
+        const response = await fetch(url, {
           method,
           headers: {
             "Content-Type": "application/json",

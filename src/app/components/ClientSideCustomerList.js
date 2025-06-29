@@ -35,11 +35,8 @@ export default function ClientSideCustomerList() {
         params.set("page", currentPage.toString());
         params.set("pageSize", pageSize.toString());
 
-        // Fetch data from API with absolute URL to avoid parsing issues
-        const baseUrl = window.location.origin;
-        const response = await fetch(
-          `${baseUrl}/api/customers?${params.toString()}`
-        );
+        // Fetch data from API using relative URL (works in both dev and production)
+        const response = await fetch(`/api/customers?${params.toString()}`);
 
         if (!response.ok) {
           throw new Error(

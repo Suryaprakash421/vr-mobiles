@@ -15,7 +15,7 @@ export function createSafeUrl(url, base) {
     if (!base && isBrowser) {
       base = window.location.origin;
     } else if (!base) {
-      base = "http://localhost:3001";
+      base = "http://localhost:3000";
     }
 
     // Ensure url is a string
@@ -27,7 +27,7 @@ export function createSafeUrl(url, base) {
     console.error("Error creating URL:", error);
     // Return a fallback URL instead of null
     try {
-      return new URL("http://localhost:3001");
+      return new URL("http://localhost:3000");
     } catch (e) {
       return null;
     }
@@ -86,19 +86,29 @@ export function getApiBaseUrl() {
   // Check if we're in a browser environment
   const isBrowser = typeof window !== "undefined";
 
-  // In browser, use window.location.origin
+  // First priority: Use environment variable if set (works in both browser and server)
+  if (
+    process.env.NEXT_PUBLIC_API_BASE_URL &&
+    process.env.NEXT_PUBLIC_API_BASE_URL !== "http://localhost:3000"
+  ) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  // Second priority: Use NEXTAUTH_URL if available and not localhost
+  if (
+    process.env.NEXTAUTH_URL &&
+    process.env.NEXTAUTH_URL !== "http://localhost:3000"
+  ) {
+    return process.env.NEXTAUTH_URL;
+  }
+
+  // Third priority: In browser, use window.location.origin only if no production URL is set
   if (isBrowser) {
     return window.location.origin;
   }
 
-  // During static build, ensure we return a valid URL
-  if (process.env.NODE_ENV === "production") {
-    return "https://example.com";
-  }
-
-  // In server environment, use environment variable or default to a valid URL
-  // This ensures we always have a valid URL during build time
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+  // Final fallback for development
+  return "http://localhost:3000";
 }
 
 /**
